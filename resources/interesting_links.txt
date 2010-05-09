@@ -1,0 +1,19 @@
+Links del proyecto:
+	http://groups.google.com/group/tp-pi-itba
+	http://code.google.com/p/tp-pi-itba
+
+
+Links de gcc:
+	http://www.faqs.org/docs/Linux-HOWTO/GCC-HOWTO.html
+	http://gcc.gnu.org/onlinedocs/gcc/Link-Options.html
+	http://heather.cs.ucdavis.edu/~matloff/UnixAndC/CLanguage/Make.html
+
+Links de SVN:
+	http://engtech.wordpress.com/2007/03/03/howto_google_code_hosting_subversion_tortoisesvn/
+		(Cómo usar svn en Google Code)
+	http://www.cs.ubc.ca/~vailen/svn_howto.htm
+		
+Links de juegos similares:
+	http://en.wikipedia.org/wiki/Rogue_(computer_game)
+		(¿Qué es un rogue rpg?)
+	http://www.gamasutra.com/view/feature/4013/the_history_of_rogue_have__you_.php
