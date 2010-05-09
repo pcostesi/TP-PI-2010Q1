@@ -55,11 +55,11 @@ if [ -z $2] && [ -z $1 ]; then
 fi
 
 if [ -z "$2" ]; then
-    PROJECT_DIR=DEFAULT_PROJECT_DIR
-    SVN_USER = "$1"
+    PROJECT_DIR=$DEFAULT_PROJECT_DIR
+    SVN_USER="$1"
 else
     PROJECT_DIR="$1"
-    SVN_USER = "$2"
+    SVN_USER="$2"
 fi
 
 
