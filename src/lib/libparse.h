@@ -48,20 +48,18 @@
  * by the parser.
  */
 typedef struct{
-    gpnode_t *next, prev;
-    gpnode_p *parent, child;
-    char *svalue;
-    char *tagname;
+    gpnode_t *next;
+    gpnode_p *child;
+    char *value;
+    char *name;
 } gpnode_t;
 
 typedef * gpnode_t gpnode_p;
 
-/* Static function prototypes */
-
-static gpnode_p gpn_alloc(void);
-static gpnode_p gpnode(char *tag, char *svalue);
-
 /* Public function prototypes */
 
 gpnode_p parse(FILE *stream);
+gpnode_p gpn_alloc(void);
+void gpn_free(gpnode_p);
+gpnode_p gpnode(char *tag, char *svalue);
 #endif

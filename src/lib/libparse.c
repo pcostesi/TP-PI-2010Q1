@@ -60,6 +60,35 @@
 
 /* Static functions */
 
+static char *
+buffer(char c)
+{
+    char * tmp_p = NULL;
+    static char * buf = NULL;
+    static int buf_size = 0;
+    static int c_size = 0;
+    if (buf_size - 2 < c_size){
+        buf_size += BLOCKSIZE;
+        if (buf == NULL){
+            tmp_p = malloc(buf_size);
+        } else {
+            tmp_p = realloc(buf, buf_size);
+        }
+        if (tmp_p == NULL) {return NULL}
+        buf = tmp_p;
+    }
+    buf[c_size] = c;
+    c_size++;
+    if (c == '\0') {
+        tmp_p = realloc(buf, c_size * sizeof(char));
+        buf_size = 0;
+        buf = NULL;
+        c_size = 0;
+        return tmp_p;
+    }
+    return buf;
+}
+
 /* Public functions */
 
 gpnode_p gpn_alloc(void)
@@ -71,33 +100,119 @@ gpnode_p gpn_alloc(void)
     }
     return node;
 }
-char * extract_up_to(FILE *stream, char lim){
-    int len = 0, c, len2 = 0;
-    char *result = NULL;
-    while ((c = fgetc(stream)) != EOF && c != lim){
-        if (len >= len2){
-            result = realloc(result, sizeof(char) * (len + BLOCKSIZE));
-            len2 = sizeof(char) * (len + BLOCKSIZE);
-        }
-        if (result != NULL){
-            result[len] = c;
-            len++;
-        }
+
+void gpn_free(gpnode_p node){
+    gpnode_p tmp;
+    while (node != NULL){
+        tmp = node;
+        node = tmp->next;
+        free(tmp->value);
+        free(tmp->name);
+        gpn_free(tmp->child);
+        free(tmp);
     }
-    result = realloc(result, len + 1);
-    result[len] = 0;
-    return result;
 }
 
-/* Yes, I am insane. Thanks. */
+/*
+ * COMMENTS IN THE FOLLOWING FUNCTION ARE TO BE REMOVED IN THE NEXT
+ * DEVELOPMENT ITERATION. THIS INFORMATION BELONGS TO THE DOCUMENTATION,
+ * AND THE FUNCTION NEEDS SHORTER COMMENTS.
+ */
+
 gpnode_p parse(FILE *stream)
 {
-    gpnode_p root = NULL;
     gpnode_p node = NULL;
-    static enum {WHITESPACE, BTAGS, STAG, ETAG} States;
-    static States state = ROOT;
+    gpnode_p last_child = NULL;
+    static enum {WHITESPACE, DATA, STAG, ETAG} States;
     int input;
+    States state = WHITESPACE;
 
     while ((input = fgetc(stream)) != EOF){
-    return root;
+        switch(state):
+            case WHITESPACE:
+                if (input == '<'){
+                    /* Whitespace is anything that comes after a closing
+                     * tag. We assume the Start of the file is itself
+                     * a root node (since the true nature of
+                     * xml-like structures is an n'ary-tree). */
+                    state = STAG;
+                    node = gpn_alloc();
+                } else if (!isspace(input) && input != 0){
+                    /* Push contents into buffer -- it's the content. In
+                     * case the file has an invalid opening tag, the
+                     * matching test at ETAG will return NULL (which
+                     * propagates to the top, resulting in an 'Invalid
+                     * File Warning'). */
+                    state = DATA;
+                    buffer((char) input);
+                }
+                break;
+            case DATA:
+                if (input == '<'){
+                    /* An opening tag indicator means the function has
+                     * to call itself to parse the child node. Remember
+                     * that xml-like files are trees, and trees are
+                     * recursive data structures. In case an invalid
+                     * node is retrieved, propagate the error and free
+                     * the allocated data structures. */
+                    ungetc(input, stream);
+                    if (last_child == NULL){
+                        last_child = parse(stream)
+                        node->child = last_child;
+                    } else {
+                        last_child->next = parse(stream);
+                        last_child = last_child->next;
+                    }
+                } else if (input != 0){
+                    buffer(input);
+                }
+                break;
+            case STAG:
+                if (input == '<'){
+                    /* the format is not quite right. Return Null. Clean
+                     * up the mess. */
+                    gpn_free(node);
+                    free(buffer(0));
+                    return NULL;
+                } else if (input == '>'){
+                    /* It's the end of the tag. Take the buffer, assign
+                     * the pointer to node->name and change state to
+                     * whitespace */
+                    state = WHITESPACE;
+                    node->name = buffer('\0');
+                } else if (input == '/'){
+                    state = ETAG;
+                } else if (input != '\0') {
+                    buffer(input);
+                }
+                break;
+            case ETAG:
+                if (input == '<'){
+                    /* WTF? NULL it down! Don't forget to free the
+                     * memory! */
+                    gpn_free(node);
+                    free(buffer(0));
+                    return NULL;
+                } else if (input == '>'){
+                    /* Retrieve the pointer to the text and empty the
+                     * buffer. Compare the opening tag with the last one
+                     * to see if they match and return the node,
+                     * otherwise return NULL (and free resources) */
+                    if (strcmp(node->name, buffer(0)) == 0){
+                        return node;
+                    } else {
+                        return NULL;
+                    }
+                } else if (input != 0){
+                  /* As the buffer function uses 0 to reset the stack,
+                   * it would be unwise to let the users add a
+                   * sentinel like 0 to a file, potentially causing bugs
+                   * such as data loss. Let's ignore the zero
+                   * altogether, because it would confuse functions like
+                   *  printf. */
+                    buffer(input);
+                }
+                break;
+    }
+    return NULL;
 }
