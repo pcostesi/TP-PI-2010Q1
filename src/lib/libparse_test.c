@@ -64,6 +64,8 @@ main(int argc, char** argv)
     printf("El archivo apunta a %p\n", fp);
     gpnode_p root = parse(fp);
     printf("root apunta a %p\n", root);
+    printf("child apunta a %p\n", root->child);
+    print(root);
     fclose(fp);
     return EXIT_SUCCESS;
 }
@@ -76,11 +78,20 @@ main(int argc, char** argv)
 void
 print(gpnode_p root)
 {
+    static indent = 0;
     while (root != NULL){
-        printf("Node \t%s\n", (char *)(root->name));
+        int x;
+        for (x = 0; x < indent; x++) printf("\t");
+        printf("<%s>\n", (char *)(root->name));
         if (((char *) root->value) != NULL)
-            printf("Node value \t%s\n", (char *)(root->value));
-        print((gpnode_p) root->child);
+        for (x = 0; x < indent; x++) printf("\t");
+        if ((char *)(root->value) != NULL)
+            printf("\t%s\n", (char *)(root->value));
+        indent++;
+        print(root->child);
+        indent--;
+        for (x = 0; x < indent; x++) printf("\t");
+        printf("</%s>\n", (char *)(root->name));
         root = root->next;
     }
 

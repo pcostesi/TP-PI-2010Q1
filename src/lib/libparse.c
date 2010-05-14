@@ -119,21 +119,16 @@ gpn_free(gpnode_p node){
     }
 }
 
-static gpnode_p sibling(gpnode_p node){
-    gpnode_p aux = gpn_alloc();
-    if (node != NULL)
-        aux->parent = node->parent;
-    aux->next = node;
-    return aux;
-}
-
 static gpnode_p child(gpnode_p node){
+    gpnode_p aux = gpn_alloc();
     if (node != NULL){
-        gpnode_p aux = sibling(node->child);
+        if (node->child != NULL){
+            aux->next = node->child;
+        }
+        node->child = aux;
         aux->parent = node;
-        return aux;
-    } else
-        return gpn_alloc();
+    }
+    return aux;
 }
 
 
@@ -175,9 +170,8 @@ gpnode_p parse(FILE *stream)
                 if (state == ETAG){
                     if (strcmp(node->name, buffer(0)) == 0){
                         indent--;
-                        printf("%s</%s (%d)>\n", node->value, node->name, indent);
                         if (node->parent == NULL){
-                            printf("CAN II HAZ PARENT PLZ!?\n");
+                            printf("My child is %p\n", node->child);
                             return node;
                         } else {
                             node = node->parent;
@@ -188,7 +182,6 @@ gpnode_p parse(FILE *stream)
                 } else if (state == STAG){
                     node = child(node);
                     node->name = buffer(0);
-                    printf("\n<%s (%d)>", node->name, indent);
                     indent++;
                 }
                 state = WHITESPACE;
