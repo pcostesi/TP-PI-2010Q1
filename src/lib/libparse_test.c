@@ -63,8 +63,7 @@ main(int argc, char** argv)
     fp = fopen("test.xml", "r");
     printf("El archivo apunta a %p\n", fp);
     gpnode_p root = parse(fp);
-    printf("root apunta a %p\n", root);
-    printf("child apunta a %p\n", root->child);
+    printf("parseado\n");
     print(root);
     fclose(fp);
     return EXIT_SUCCESS;

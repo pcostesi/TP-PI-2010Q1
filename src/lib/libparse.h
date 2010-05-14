@@ -48,9 +48,8 @@
 typedef struct gpnode * gpnode_p;
 
 typedef struct gpnode{
-    gpnode_p next;
-    gpnode_p child;
-    gpnode_p parent;
+    gpnode_p next, prev;
+    gpnode_p child, parent;
     char *value;
     char *name;
 } gpnode_t;

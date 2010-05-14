@@ -68,23 +68,28 @@ buffer(char c)
     static char * buf = NULL;
     static int buf_size = 0;
     static int c_size = 0;
-    if (buf_size - 2 < c_size){
+
+    if (buf_size <= c_size){
         buf_size += BLOCKSIZE;
         if (buf == NULL){
             tmp_p = malloc(buf_size);
         } else {
             tmp_p = realloc(buf, buf_size);
         }
-        if (tmp_p == NULL) {return NULL;}
+        if (tmp_p == NULL) return NULL;
         buf = tmp_p;
     }
+
     buf[c_size] = c;
     c_size++;
+
     if (c == '\0') {
         if (c_size == 1){
-            c_size = 0;
+            free(buf);
+            tmp_p = NULL;
+        } else {
+            tmp_p = realloc(buf, c_size);
         }
-        tmp_p = realloc(buf, c_size * sizeof(char));
         buf_size = 0;
         buf = NULL;
         c_size = 0;
@@ -100,7 +105,6 @@ gpn_alloc(void)
 {
     gpnode_p node = malloc(sizeof(gpnode_t));
     if (node == NULL){
-        printf("OUT OF MEMORY! :(");
         exit(255);
     }
     return node;
@@ -119,14 +123,18 @@ gpn_free(gpnode_p node){
     }
 }
 
-static gpnode_p child(gpnode_p node){
+gpnode_p child(gpnode_p node){
     gpnode_p aux = gpn_alloc();
     if (node != NULL){
-        if (node->child != NULL){
-            aux->next = node->child;
-        }
-        node->child = aux;
         aux->parent = node;
+        if (node->child != NULL){
+            aux->prev = node->child->prev;
+            aux->prev->next = aux;
+            node->child->prev = aux;
+        } else {
+            aux->prev = aux;
+            node->child = aux;
+        }
     }
     return aux;
 }
@@ -141,7 +149,6 @@ gpnode_p parse(FILE *stream)
     gpnode_p node = NULL;
     static enum States {STAG, ETAG, DATA, WHITESPACE } state;
     int input;
-    int indent = 0;
     state = WHITESPACE;
     while ((input = fgetc(stream)) != EOF){
         switch(input){
@@ -169,9 +176,8 @@ gpnode_p parse(FILE *stream)
             case '>':
                 if (state == ETAG){
                     if (strcmp(node->name, buffer(0)) == 0){
-                        indent--;
                         if (node->parent == NULL){
-                            printf("My child is %p\n", node->child);
+                            printf("HAPPY HAPPY JOY JOY\n");
                             return node;
                         } else {
                             node = node->parent;
@@ -182,7 +188,6 @@ gpnode_p parse(FILE *stream)
                 } else if (state == STAG){
                     node = child(node);
                     node->name = buffer(0);
-                    indent++;
                 }
                 state = WHITESPACE;
                 break;
