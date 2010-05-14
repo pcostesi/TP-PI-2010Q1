@@ -1,5 +1,5 @@
 /*
- *      libparse.h
+ *      filename.h
  *
  *      Copyright 2010:
  *          Sebastián Maio <email@goes.here>
@@ -33,30 +33,105 @@
  *      OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define LIBPARSE 0.1
+#define CRAWLER_VERSION 0.1
 
-#ifndef __LIB_PARSE
-#define __LIB_PARSE 1
+#ifndef __LIB_CRAWLER
+#define __LIB_CRAWLER 1
 
 /*
- * General Purpose Node. This node is used to represent a virtual node file
- * by the parser.
+ *  System includes
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
-typedef struct gpnode * gpnode_p;
+/*
+ *  General includes
+ */
 
-typedef struct gpnode{
-    gpnode_p next, prev;
-    gpnode_p child, parent;
-    char *value;
+/*
+ *  Macros and constants
+ */
+
+typedef struct profession{
+    int ID;
     char *name;
-} gpnode_t;
+    int minHP, maxHP;
+    int minDP, maxDP;
+} profession_t;
 
-/* Public function prototypes */
 
-gpnode_p parse(FILE *);
-gpnode_p gpn_alloc(void);
-void gpn_free(gpnode_p);
+typedef struct enemy{
+    int ID;
+    char * name;
+    int minHP, maxHP, minDP, maxDP, minDP0, maxDP0;
+    int minDP1, maxDP1, minDP2, maxDP2;
+} enemy_t;
+
+
+typedef struct gate{
+    int room_id;
+    char * name;
+} gate_t;
+
+
+typedef struct room{
+    int ID;
+    char * name;
+    char * description;
+    gate_p * gates;
+    int gates_size;
+    enemy_p * enemies;
+    int enemies_size;
+} room_t;
+
+
+typedef struct game{
+    int StartRoomID;
+    int ExitRoomID;
+    profession_t ** professions;
+    int professions_size;
+    enemy_t ** enemies;
+    int enemies_size;
+    room_t ** rooms;
+    int rooms_size;
+} game_t;
+
+
+typedef struct character{
+    int roomID;
+    int professionID;
+    int HP;
+    int DP;
+} character_t;
+
+
+
+typedef struct log_entry{
+    time_t *time;
+    char * action;
+    struct log_entry *next;
+} log_entry_t;
+
+
+typedef struct logbook{
+    char *name;
+    character_t *player;
+    log_entry_t *log_start;
+    log_entry_t *log_end;
+} logbook_t;
+
+/*
+ *  Static function prototypes
+ */
+
+void log(logbook_t book, const char * action, character_t player);
+
+room_t *open_gate( game_t *g, gate_t *d);
+
+/*
+ *  Public function prototypes
+ */
+
 #endif

@@ -1,5 +1,5 @@
 /*
- *      libparse.h
+ *      filename.c
  *
  *      Copyright 2010:
  *          Sebastián Maio <email@goes.here>
@@ -33,30 +33,55 @@
  *      OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define LIBPARSE 0.1
 
-#ifndef __LIB_PARSE
-#define __LIB_PARSE 1
+#define PROJECT_NAME_VERSION 0.1
 
 /*
- * General Purpose Node. This node is used to represent a virtual node file
- * by the parser.
+ *  System includes
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 
-typedef struct gpnode * gpnode_p;
+/*
+ *  General includes
+ */
 
-typedef struct gpnode{
-    gpnode_p next, prev;
-    gpnode_p child, parent;
-    char *value;
-    char *name;
-} gpnode_t;
+#include "libparse.h"
 
-/* Public function prototypes */
+/*
+ *  Public function prototypes
+ */
 
-gpnode_p parse(FILE *);
-gpnode_p gpn_alloc(void);
-void gpn_free(gpnode_p);
-#endif
+void print(gpnode_p);
+
+int
+main(int argc, char** argv)
+{
+    printf("asdasd\n");
+    FILE *fp;
+    fp = fopen("test.xml", "r");
+    printf("El archivo apunta a %p\n", fp);
+    gpnode_p root = parse(fp);
+    printf("root apunta a %p\n", root);
+    fclose(fp);
+    return EXIT_SUCCESS;
+}
+
+
+/*
+ *  Public functions
+ */
+
+void
+print(gpnode_p root)
+{
+    while (root != NULL){
+        printf("Node \t%s\n", (char *)(root->name));
+        if (((char *) root->value) != NULL)
+            printf("Node value \t%s\n", (char *)(root->value));
+        print((gpnode_p) root->child);
+        root = root->next;
+    }
+
+}

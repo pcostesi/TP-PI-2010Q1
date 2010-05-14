@@ -26,9 +26,9 @@
  *      A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
  *      OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  *      SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- *      LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ *      LIMITED TO, PROCUREMENT OF SUBSTARTTAGITUTE GOODS OR SERVICES; LOSS OF USE,
  *      DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- *      THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ *      THEORY OF LIABILITY, WHETHER IN CONTRACT, STARTTAGRICT LIABILITY, OR TORT
  *      (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  *      OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -41,6 +41,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
 
@@ -48,11 +49,11 @@
  *  General includes
  */
 
-#include "libparse.c"
+#include "libparse.h"
 
 /* Macros and constants */
 
-#define BLOCSIZE 16
+#define BLOCKSIZE 16
 
 /* Static function prototypes */
 
@@ -74,12 +75,15 @@ buffer(char c)
         } else {
             tmp_p = realloc(buf, buf_size);
         }
-        if (tmp_p == NULL) {return NULL}
+        if (tmp_p == NULL) {return NULL;}
         buf = tmp_p;
     }
     buf[c_size] = c;
     c_size++;
     if (c == '\0') {
+        if (c_size == 1){
+            c_size = 0;
+        }
         tmp_p = realloc(buf, c_size * sizeof(char));
         buf_size = 0;
         buf = NULL;
@@ -91,7 +95,8 @@ buffer(char c)
 
 /* Public functions */
 
-gpnode_p gpn_alloc(void)
+gpnode_p
+gpn_alloc(void)
 {
     gpnode_p node = malloc(sizeof(gpnode_t));
     if (node == NULL){
@@ -101,7 +106,8 @@ gpnode_p gpn_alloc(void)
     return node;
 }
 
-void gpn_free(gpnode_p node){
+void
+gpn_free(gpnode_p node){
     gpnode_p tmp;
     while (node != NULL){
         tmp = node;
@@ -113,106 +119,49 @@ void gpn_free(gpnode_p node){
     }
 }
 
-/*
- * COMMENTS IN THE FOLLOWING FUNCTION ARE TO BE REMOVED IN THE NEXT
- * DEVELOPMENT ITERATION. THIS INFORMATION BELONGS TO THE DOCUMENTATION,
- * AND THE FUNCTION NEEDS SHORTER COMMENTS.
- */
+static gpnode_p sibling(gpnode_p node){
+    gpnode_p aux = gpn_alloc();
+    aux->next = node;
+    return aux;
+}
+
 
 gpnode_p parse(FILE *stream)
 {
+    #define CLEANUP     printf("Cleaning up!\n");\
+                        gpn_free(node); \
+                        free(buffer(0)); \
+                        return NULL;
     gpnode_p node = NULL;
-    gpnode_p last_child = NULL;
-    static enum {WHITESPACE, DATA, STAG, ETAG} States;
+    static enum States {STAG, ETAG, DATA, WS } state;
     int input;
-    States state = WHITESPACE;
+
+    state = WS;
 
     while ((input = fgetc(stream)) != EOF){
-        switch(state):
-            case WHITESPACE:
-                if (input == '<'){
-                    /* Whitespace is anything that comes after a closing
-                     * tag. We assume the Start of the file is itself
-                     * a root node (since the true nature of
-                     * xml-like structures is an n'ary-tree). */
+        switch(input){
+            case '<':
+                if (state == WS || state == DATA){
                     state = STAG;
-                    node = gpn_alloc();
-                } else if (!isspace(input) && input != 0){
-                    /* Push contents into buffer -- it's the content. In
-                     * case the file has an invalid opening tag, the
-                     * matching test at ETAG will return NULL (which
-                     * propagates to the top, resulting in an 'Invalid
-                     * File Warning'). */
-                    state = DATA;
-                    buffer((char) input);
+                } else {
+
                 }
                 break;
-            case DATA:
-                if (input == '<'){
-                    /* An opening tag indicator means the function has
-                     * to call itself to parse the child node. Remember
-                     * that xml-like files are trees, and trees are
-                     * recursive data structures. In case an invalid
-                     * node is retrieved, propagate the error and free
-                     * the allocated data structures. */
-                    ungetc(input, stream);
-                    if (last_child == NULL){
-                        last_child = parse(stream)
-                        node->child = last_child;
-                    } else {
-                        last_child->next = parse(stream);
-                        last_child = last_child->next;
-                    }
-                } else if (input != 0){
-                    buffer(input);
-                }
+
+            case '/':
                 break;
-            case STAG:
-                if (input == '<'){
-                    /* the format is not quite right. Return Null. Clean
-                     * up the mess. */
-                    gpn_free(node);
-                    free(buffer(0));
-                    return NULL;
-                } else if (input == '>'){
-                    /* It's the end of the tag. Take the buffer, assign
-                     * the pointer to node->name and change state to
-                     * whitespace */
-                    state = WHITESPACE;
-                    node->name = buffer('\0');
-                } else if (input == '/'){
-                    state = ETAG;
-                } else if (input != '\0') {
-                    buffer(input);
-                }
+
+            case '>':
                 break;
-            case ETAG:
-                if (input == '<'){
-                    /* WTF? NULL it down! Don't forget to free the
-                     * memory! */
-                    gpn_free(node);
-                    free(buffer(0));
-                    return NULL;
-                } else if (input == '>'){
-                    /* Retrieve the pointer to the text and empty the
-                     * buffer. Compare the opening tag with the last one
-                     * to see if they match and return the node,
-                     * otherwise return NULL (and free resources) */
-                    if (strcmp(node->name, buffer(0)) == 0){
-                        return node;
-                    } else {
-                        return NULL;
-                    }
-                } else if (input != 0){
-                  /* As the buffer function uses 0 to reset the stack,
-                   * it would be unwise to let the users add a
-                   * sentinel like 0 to a file, potentially causing bugs
-                   * such as data loss. Let's ignore the zero
-                   * altogether, because it would confuse functions like
-                   *  printf. */
-                    buffer(input);
+
+            default:
+                if(isspace(input)){
+
+                } else {
+
                 }
-                break;
+        }
     }
-    return NULL;
+    return node;
+    #undef CLEANUP
 }
