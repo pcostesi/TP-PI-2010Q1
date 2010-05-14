@@ -121,44 +121,88 @@ gpn_free(gpnode_p node){
 
 static gpnode_p sibling(gpnode_p node){
     gpnode_p aux = gpn_alloc();
+    if (node != NULL)
+        aux->parent = node->parent;
     aux->next = node;
     return aux;
+}
+
+static gpnode_p child(gpnode_p node){
+    if (node != NULL){
+        gpnode_p aux = sibling(node->child);
+        aux->parent = node;
+        return aux;
+    } else
+        return gpn_alloc();
 }
 
 
 gpnode_p parse(FILE *stream)
 {
-    #define CLEANUP     printf("Cleaning up!\n");\
+    #define CLEANUP     printf("Cleaning up! In line %d\n", __LINE__);\
                         gpn_free(node); \
                         free(buffer(0)); \
                         return NULL;
     gpnode_p node = NULL;
-    static enum States {STAG, ETAG, DATA, WS } state;
+    static enum States {STAG, ETAG, DATA, WHITESPACE } state;
     int input;
-
-    state = WS;
-
+    int indent = 0;
+    state = WHITESPACE;
     while ((input = fgetc(stream)) != EOF){
         switch(input){
             case '<':
-                if (state == WS || state == DATA){
+                if (node != NULL){
+                    node->value = buffer(0);
+                }
+                if (state == WHITESPACE || state == DATA){
                     state = STAG;
                 } else {
-
+                    CLEANUP
                 }
                 break;
 
             case '/':
+                if (state == STAG){
+                    state = ETAG;
+                } else if (state == ETAG){
+                    CLEANUP
+                } else {
+                    buffer(input);
+                }
                 break;
 
             case '>':
+                if (state == ETAG){
+                    if (strcmp(node->name, buffer(0)) == 0){
+                        indent--;
+                        printf("%s</%s (%d)>\n", node->value, node->name, indent);
+                        if (node->parent == NULL){
+                            printf("CAN II HAZ PARENT PLZ!?\n");
+                            return node;
+                        } else {
+                            node = node->parent;
+                        }
+                    } else {
+                        CLEANUP
+                    }
+                } else if (state == STAG){
+                    node = child(node);
+                    node->name = buffer(0);
+                    printf("\n<%s (%d)>", node->name, indent);
+                    indent++;
+                }
+                state = WHITESPACE;
                 break;
 
             default:
-                if(isspace(input)){
-
-                } else {
-
+                if(isspace(input) && input != 0){
+                    if (state != WHITESPACE)
+                        buffer(input);
+                } else if (input != 0){
+                    if (state == WHITESPACE){
+                        state = DATA;
+                    }
+                    buffer(input);
                 }
         }
     }

@@ -80,9 +80,9 @@ typedef struct room{
     int ID;
     char * name;
     char * description;
-    gate_p * gates;
+    gate_t * gates;
     int gates_size;
-    enemy_p * enemies;
+    enemy_t * enemies;
     int enemies_size;
 } room_t;
 
@@ -126,9 +126,9 @@ typedef struct logbook{
  *  Static function prototypes
  */
 
-void log(logbook_t book, const char * action, character_t player);
+void logmsg(logbook_t book, const char * action, character_t player);
 
-room_t *open_gate( game_t *g, gate_t *d);
+room_t *open_gate(game_t *g, gate_t *d);
 
 /*
  *  Public function prototypes
