@@ -56,7 +56,7 @@
  *  Macros and constants
  */
 
-typedef struct profession{
+typedef struct Profession{
     int ID;
     char *name;
     int minHP, maxHP;
@@ -64,7 +64,7 @@ typedef struct profession{
 } profession_t;
 
 
-typedef struct enemy{
+typedef struct Enemy{
     int ID;
     char * name;
     int minHP, maxHP, minDP, maxDP, minDP0, maxDP0;
@@ -72,24 +72,24 @@ typedef struct enemy{
 } enemy_t;
 
 
-typedef struct gate{
+typedef struct Gate{
     int room_id;
     char * name;
 } gate_t;
 
 
-typedef struct room{
+typedef struct Room{
     int ID;
     char * name;
     char * description;
-    gate_t * gates;
+    gate_t ** gates;
     int gates_size;
-    enemy_t * enemies;
+    int * enemy_ids;
     int enemies_size;
 } room_t;
 
 
-typedef struct game{
+typedef struct Game{
     int StartRoomID;
     int ExitRoomID;
     profession_t ** professions;
@@ -101,7 +101,7 @@ typedef struct game{
 } game_t;
 
 
-typedef struct character{
+typedef struct Character{
     int roomID;
     int professionID;
     int HP;
@@ -110,18 +110,17 @@ typedef struct character{
 
 
 
-typedef struct log_entry{
+typedef struct LogEntry{
     time_t *time;
     char * action;
-    struct log_entry *next;
+    struct LogEntry *next;
 } log_entry_t;
 
 
 typedef struct{
     char *name;
     character_t *player;
-    log_entry_t *log_start;
-    log_entry_t *log_end;
+    log_entry_t *log;
 } logbook_t;
 
 /*
@@ -133,7 +132,7 @@ typedef struct{
  *  Public function prototypes
  */
 
-void logmsg(logbook_t book, const char * action, character_t player);
+void logmsg(logbook_t book, const char * action);
 room_t *open_gate(game_t *g, gate_t *d);
 game_t *load(char *filename);
 int save(game_t *);
