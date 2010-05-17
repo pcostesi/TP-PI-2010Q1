@@ -1,10 +1,10 @@
-<Juego>
+a<Juego>
    <PuntosImportantes>
            <HabitacionInicioID>0</HabitacionInicioID>
            <HabitacionSalidaID>3</HabitacionSalidaID>
    </PuntosImportantes>
    <Profesiones>
-           <Cantidad>3</Cantidad>
+           <Cantidad>3</Cantidade>
            <Profesion>
                    <ID>0</ID>
                    <Nombre>Guerrero

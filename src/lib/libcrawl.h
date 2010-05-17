@@ -1,5 +1,5 @@
 /*
- *      filename.h
+ *      libcrawl.h
  *
  *      Copyright 2010:
  *          Sebastián Maio <email@goes.here>
@@ -49,6 +49,8 @@
 /*
  *  General includes
  */
+
+#include "libparse.h"
 
 /*
  *  Macros and constants
@@ -115,7 +117,7 @@ typedef struct log_entry{
 } log_entry_t;
 
 
-typedef struct logbook{
+typedef struct{
     char *name;
     character_t *player;
     log_entry_t *log_start;
@@ -126,12 +128,14 @@ typedef struct logbook{
  *  Static function prototypes
  */
 
-void logmsg(logbook_t book, const char * action, character_t player);
-
-room_t *open_gate(game_t *g, gate_t *d);
 
 /*
  *  Public function prototypes
  */
+
+void logmsg(logbook_t book, const char * action, character_t player);
+room_t *open_gate(game_t *g, gate_t *d);
+game_t *load(char *filename);
+int save(game_t *);
 
 #endif

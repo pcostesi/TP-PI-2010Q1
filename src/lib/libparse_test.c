@@ -53,18 +53,33 @@
  *  Public function prototypes
  */
 
-void print(gpnode_p);
+void gpn_print(gpnode_p);
 
 int
 main(int argc, char** argv)
 {
-    printf("asdasd\n");
     FILE *fp;
-    fp = fopen("test.xml", "r");
-    printf("El archivo apunta a %p\n", fp);
-    gpnode_p root = parse(fp);
+    int line, col, parsed;
+    gpnode_p root;
+    char filename[100];
+    printf("Write the name of the file you want to parse:\n");
+    scanf("%32s", filename);
+    printf("Your file: %-32s\n", filename);
+    fp = fopen(filename, "r");
+    if (fp == NULL){
+        printf("File doesn't exist!\n");
+        return 2;
+    }
+    root = parse(fp, &line, &col);
+    if (root == NULL){
+        printf("Parsing error at line %d, column %d!\n", line, col);
+        fclose(fp);
+        return 1;
+    }
     printf("parseado\n");
-    print(root);
+    parsed = gpn_to_file(stdout, root);
+    printf("\nParsed: %d nodes.\n", parsed);
+    gpn_free(root);
     fclose(fp);
     return EXIT_SUCCESS;
 }
@@ -73,25 +88,3 @@ main(int argc, char** argv)
 /*
  *  Public functions
  */
-
-void
-print(gpnode_p root)
-{
-    static indent = 0;
-    while (root != NULL){
-        int x;
-        for (x = 0; x < indent; x++) printf("\t");
-        printf("<%s>\n", (char *)(root->name));
-        if (((char *) root->value) != NULL)
-        for (x = 0; x < indent; x++) printf("\t");
-        if ((char *)(root->value) != NULL)
-            printf("\t%s\n", (char *)(root->value));
-        indent++;
-        print(root->child);
-        indent--;
-        for (x = 0; x < indent; x++) printf("\t");
-        printf("</%s>\n", (char *)(root->name));
-        root = root->next;
-    }
-
-}

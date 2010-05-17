@@ -1,15 +1,15 @@
 /*
- *      libparse.h
- *
+ *      libcrawl.c
+ *      
  *      Copyright 2010:
  *          Sebastián Maio <email@goes.here>
  *          Juan Pablo Rey <email@goes.here>
  *          Pablo Alejandro Costesich <pcostesi@alu.itba.edu.ar>
- *
+ *      
  *      Redistribution and use in source and binary forms, with or without
  *      modification, are permitted provided that the following conditions are
  *      met:
- *
+ *      
  *      * Redistributions of source code must retain the above copyright
  *        notice, this list of conditions and the following disclaimer.
  *      * Redistributions in binary form must reproduce the above
@@ -19,7 +19,7 @@
  *      * Neither the name of the ITBA nor the names of its
  *        contributors may be used to endorse or promote products derived from
  *        this software without specific prior written permission.
- *
+ *      
  *      THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *      "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *      LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,33 +33,58 @@
  *      OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define LIBPARSE 0.1
 
-#ifndef __LIB_PARSE
-#define __LIB_PARSE 1
+#define LIBCRAWL 0.1
 
 /*
- * General Purpose Node. This node is used to represent a virtual node file
- * by the parser.
+ *  System includes
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 
-typedef struct gpnode * gpnode_p;
+/*
+ *  General includes
+ */
 
-typedef struct gpnode{
-    gpnode_p next, prev;
-    gpnode_p child, parent;
-    char *value;
-    char *name;
-} gpnode_t;
+#include "libcrawl.h"
+#include "libparse.h"
 
-/* Public function prototypes */
+/*
+ *  Macros and constants
+ */
 
-gpnode_p parse(FILE *, int *, int *);
-int gpn_to_file(FILE *, gpnode_p);
-gpnode_p gpn_alloc(void);
-void gpn_free(gpnode_p);
-gpnode_p child(gpnode_p);
+/*
+ *  Static functions
+ */
 
-#endif
+/*
+ *  Public functions
+ */
+
+void
+logmsg(logbook_t book, const char * action, character_t player)
+{
+
+}
+
+
+room_t *
+open_gate(game_t *g, gate_t *d)
+{
+    return NULL;
+}
+
+
+game_t *
+load(char *filename)
+{
+    return NULL;
+}
+
+
+int
+save(game_t *g)
+{
+    return 0;
+}
