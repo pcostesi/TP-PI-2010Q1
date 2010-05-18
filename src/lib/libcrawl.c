@@ -55,7 +55,7 @@
 #define BLOCKSIZE 32
 
 /* Static function prototypes */
-static char *           strdup(const char *);
+static char *           m_m_strdup(const char *);
 static profession_t *  new_profession_from_gpnode(gpnode_p);
 static enemy_t *        new_enemy_from_gpnode(gpnode_p, int);
 static gate_t *         new_gate_from_gpnode(gpnode_p);
@@ -70,28 +70,27 @@ static unsigned int    extract_rooms(game_t *, gpnode_p);
 /* Static functions */
 
 static char *
-strdup(const char * string)
+m_strdup(const char * string)
 {
-    int itr = 0;
     int size = 0;
     int idx = 0;
     char * tmp;
-    char * new = calloc(BLOCKSIZE);
-    
+    char * new = calloc(1, BLOCKSIZE);
+
     if (new == NULL) return NULL;
-    for (; *string != 0; *string++, idx++){
+    for (idx = 0; string[idx] != 0; idx++){
         if (size >= idx){
             size += BLOCKSIZE;
             tmp = realloc(new, size);
             if (tmp == NULL) return NULL;
             new = tmp;
         }
-        new[idx] = *string;
+        new[idx] = string[idx];
     }
     new[idx++] = 0;
     new = realloc(new, idx);
-    
-    return new; 
+
+    return new;
 }
 
 #undef BLOCKSIZE
@@ -211,7 +210,7 @@ extract_enemy_ids(room_t * room, gpnode_p enemies)
     gpnode_p node;
     int idx = 0;
     int exitval = 0;
-    
+
     room->enemies_size = 0;
     room->enemy_ids = NULL;
     for (node = enemies->child; node != NULL; node = node->next){
@@ -272,9 +271,13 @@ extract_professions(game_t * game, gpnode_p root)
                     professions = calloc(prof_size, sizeof(profession_t *));
                 }
             } else if (strcmp(root->name, "Profesion") == 0){
-                professions[prof_idx] = new_profession_from_gpnode(root->child);
-                if (professions[prof_idx] == NULL) exitval |= (1 << prof_idx);
-                prof_idx++;
+                profession = new_profession_from_gpnode(root->child);
+                if (profession != NULL && profession->ID < prof_size)
+                    professions[profession->ID] = profession;
+                else{
+                    free(profession);
+                    exitval = 1;
+                }
             }
         }
         game->professions = professions;
@@ -288,7 +291,7 @@ extract_important_points(game_t * game, gpnode_p root)
 {
     int exitval = 0;
     gpnode_p child;
-    
+
     if (strcmp(root->name, "PuntosImportantes") == 0){
         for(child = root->child; child != NULL; child = child->next){
             if(strcmp(child->name, "HabitacionInicioID") == 0){
@@ -319,9 +322,11 @@ extract_enemies(game_t * game, gpnode_p root)
                     enemies = calloc(enem_size, sizeof(enemy_t *));
                 }
             } else if (strcmp(root->name, "Enemigo") == 0){
-                enemies[enem_idx] = new_enemy_from_gpnode(root->child);
-                if (enemies[enem_idx] == NULL) exitval |= (1 << enem_idx);
-                enem_idx++;
+                enemy = new_enemy_from_gpnode(root->child, game->professions_size);
+                if (enemy != NULL && enemy->ID)
+                    enemies[enemy->ID] = enemy;
+                else
+                    exitval = 1;
             }
         }
     }
@@ -401,29 +406,33 @@ log_to_disk(logbook_t * book, const char * filename)
     char timestring[21];
 
     fp = fopen(filename, "w");
-    
+
     root = child(NULL);
     if (root == NULL) return 1;
-    root->name = strdup("Log");
+    root->name = m_strdup("Log");
     root->value = NULL;
+
+    node = child(root);
+    node->name = m_strdup("Seed");
+    node->value = timestring;
 
     for (entry = book->log; entry != NULL && exitval != 0; entry = entry->next){
         node = child(root);
-        node->name = strdup("Entry");
-        
+        node->name = m_strdup("Entry");
+
         time_node = child(node);
-        time_node->name = strdup("Time");
-        strftime(timestring, "%d/%m/%Y %H:%M:%S");
-        time_hode->value = strdup(timestring);
+        time_node->name = m_strdup("Time");
+        strftime(timestring, 20, "%d/%m/%Y %H:%M:%S", gmtime(&entry->time));
+        time_node->value = m_strdup(timestring);
 
         action_node = child(node);
-        action_node->name = strdup("Action");
-        action_node->value = strdup(entry->action);
+        action_node->name = m_strdup("Action");
+        action_node->value = m_strdup(entry->action);
     }
     gpn_to_file(fp, root);
     fclose(fp);
     gpn_free(root);
-    
+
     return exitval;
 }
 
