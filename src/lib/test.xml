@@ -1,10 +1,10 @@
-a<Juego>
+<Juego>
    <PuntosImportantes>
            <HabitacionInicioID>0</HabitacionInicioID>
            <HabitacionSalidaID>3</HabitacionSalidaID>
    </PuntosImportantes>
    <Profesiones>
-           <Cantidad>3</Cantidade>
+           <Cantidad>3</Cantidad>
            <Profesion>
                    <ID>0</ID>
                    <Nombre>Guerrero
@@ -24,7 +24,7 @@ a<Juego>
                    
                    
                    
-                   m</Nombre>
+</Nombre>
                    <MinHP>10</MinHP>
                    <MaxHP>30</MaxHP>
                    <MinDP>2</MinDP>

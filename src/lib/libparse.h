@@ -62,4 +62,6 @@ gpnode_p gpn_alloc(void);
 void gpn_free(gpnode_p);
 gpnode_p child(gpnode_p);
 
+
+#undef BLOCKSIZE
 #endif

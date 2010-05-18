@@ -61,9 +61,15 @@ main(int argc, char** argv)
     FILE *fp;
     int line, col, parsed;
     gpnode_p root;
-    char filename[100];
-    printf("Write the name of the file you want to parse:\n");
-    scanf("%32s", filename);
+    char * filename;
+    if (argc == 1){
+        printf("Write the name of the file you want to parse:\n");
+        filename = malloc(33);
+        scanf("%32s", filename);
+
+    } else {
+        filename = argv[1];
+    }
     printf("Your file: %-32s\n", filename);
     fp = fopen(filename, "r");
     if (fp == NULL){

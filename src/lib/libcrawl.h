@@ -57,70 +57,80 @@
  */
 
 typedef struct Profession{
-    int ID;
-    char *name;
-    int minHP, maxHP;
-    int minDP, maxDP;
+    int     ID;
+    char    *name;
+    int     minHP;
+    int     maxHP;
+    int     minDP;
+    int     maxDP;
 } profession_t;
 
 
 typedef struct Enemy{
-    int ID;
-    char * name;
-    int minHP, maxHP, minDP, maxDP, minDP0, maxDP0;
-    int minDP1, maxDP1, minDP2, maxDP2;
+    int     ID;
+    char *  name;
+    int     minHP;
+    int     maxHP;
+    int     minDP;
+    int     maxDP;
+    int     minDP0;
+    int     maxDP0;
+    int     minDP1;
+    int     maxDP1;
+    int     minDP2;
+    int     maxDP2;
 } enemy_t;
 
 
 typedef struct Gate{
-    int room_id;
-    char * name;
+    int     room_id;
+    char *  name;
 } gate_t;
 
 
 typedef struct Room{
-    int ID;
-    char * name;
-    char * description;
-    gate_t ** gates;
-    int gates_size;
-    int * enemy_ids;
-    int enemies_size;
+    int         ID;
+    char *      name;
+    char *      description;
+    gate_t **   gates;
+    int         gates_size;
+    int *       enemy_ids;
+    int         enemies_size;
 } room_t;
 
 
 typedef struct Game{
-    int StartRoomID;
-    int ExitRoomID;
-    profession_t ** professions;
-    int professions_size;
-    enemy_t ** enemies;
-    int enemies_size;
-    room_t ** rooms;
-    int rooms_size;
+    int                 StartRoomID;
+    int                 ExitRoomID;
+    profession_t **    professions;
+    int                 professions_size;
+    enemy_t **         enemies;
+    int                 enemies_size;
+    room_t **          rooms;
+    int                 rooms_size;
 } game_t;
 
 
 typedef struct Character{
-    int roomID;
-    int professionID;
-    int HP;
-    int DP;
+    int     roomID;
+    int     professionID;
+    int     HP;
+    int     DP;
 } character_t;
 
 
 
 typedef struct LogEntry{
-    time_t *time;
-    char * action;
-    struct LogEntry *next;
+    time_t *            time;
+    const char *        action;
+    struct LogEntry *  next;
 } log_entry_t;
 
 
 typedef struct{
-    char *name;
-    character_t *player;
-    log_entry_t *log;
+    char *           name;
+    character_t *   player;
+    log_entry_t *   log;
 } logbook_t;
 
 /*
@@ -132,9 +142,10 @@ typedef struct{
  *  Public function prototypes
  */
 
-void logmsg(logbook_t book, const char * action);
-room_t *open_gate(game_t *g, gate_t *d);
-game_t *load(char *filename);
-int save(game_t *);
+void        logmsg(logbook_t * book, const char * action);
+room_t *    open_gate(game_t * g, gate_t * d);
+game_t *    load_game(char * filename);
+int         save_game(game_t *);
+void        free_game(game_t *);
 
 #endif
