@@ -105,7 +105,7 @@ buffer(char c)
         buf = tmp_p;
         tmp_p = NULL;
     }
-    
+
     buf[c_size] = c;
     c_size++;
 
@@ -135,11 +135,9 @@ buffer(char c)
 gpnode_p
 gpn_alloc(void)
 {
-    gpnode_p node = calloc(1, sizeof(gpnode_t));
-
-    if (node == NULL){
-        exit(255);
-    }
+    gpnode_p node;
+    node = calloc(1, sizeof(gpnode_t));
+    if (node == NULL) return NULL;
     return node;
 }
 
@@ -160,9 +158,8 @@ gpn_free(gpnode_p node)
 
 gpnode_p
 child(gpnode_p node)
-{    
+{
     gpnode_p aux = gpn_alloc();
-    
     if (node != NULL){
         aux->parent = node;
         if (node->child != NULL){
@@ -222,7 +219,7 @@ parse(FILE *stream, int *lp, int *cp)
 
         /* Main dispatcher -- Input (and not state) driven */
         switch(input){
-            
+
             case '<':
                 /* In case we already have a node, save the buffered
                  * contents to the node and reset the buffer. */
@@ -288,11 +285,11 @@ parse(FILE *stream, int *lp, int *cp)
                     buffer(input);
                 }
         }
-        
+
     }
-    
+
     return node;
-    
+
     #undef CLEANUP
 }
 
@@ -301,25 +298,25 @@ gpn_to_file(FILE *stream, gpnode_p root)
 {
     #define INDENT  for(iter = 0; iter < indent_level; iter++) \
                     putc('\t', stream);
-                    
+
     static int indent_level = 0;
     int iter;
     int parsed = 0;
-    
+
     while (root != NULL){
-        INDENT; printf("<%s>\n", root->name);
+        INDENT; fprintf(stream, "<%s>\n", root->name);
         indent_level++;
         if (root->value != NULL){
             INDENT;
-            printf("%s\n", root->value);
+            fprintf(stream, "%s\n", root->value);
         }
         parsed += gpn_to_file(stream, root->child);
         indent_level--;
-        INDENT; printf("</%s>\n", root->name);
+        INDENT; fprintf(stream, "</%s>\n", root->name);
         parsed++;
         root = root->next;
     }
-    
+
     #undef INDENT
     return parsed;
 }

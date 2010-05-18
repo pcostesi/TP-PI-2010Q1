@@ -58,7 +58,7 @@
 
 typedef struct Profession{
     int     ID;
-    char    *name;
+    char *  name;
     int     minHP;
     int     maxHP;
     int     minDP;
@@ -94,6 +94,7 @@ typedef struct Room{
     int         gates_size;
     int *       enemy_ids;
     int         enemies_size;
+    int         visited;
 } room_t;
 
 
@@ -113,13 +114,13 @@ typedef struct Character{
     int     roomID;
     int     professionID;
     int     HP;
-    int     DP;
+    char *  name;
 } character_t;
 
 
 
 typedef struct LogEntry{
-    time_t *            time;
+    time_t              time;
     const char *        action;
     struct LogEntry *  next;
 } log_entry_t;
@@ -129,6 +130,7 @@ typedef struct{
     char *           name;
     character_t *   player;
     log_entry_t *   log;
+    int              seed;
 } logbook_t;
 
 /*

@@ -38,11 +38,6 @@
 #ifndef __LIB_PARSE
 #define __LIB_PARSE 1
 
-/*
- * General Purpose Node. This node is used to represent a virtual node file
- * by the parser.
- */
-
 #include <stdio.h>
 
 typedef struct gpnode * gpnode_p;
@@ -62,6 +57,4 @@ gpnode_p gpn_alloc(void);
 void gpn_free(gpnode_p);
 gpnode_p child(gpnode_p);
 
-
-#undef BLOCKSIZE
 #endif
