@@ -71,8 +71,6 @@ typedef struct Enemy{
     char *  name;
     int     minHP;
     int     maxHP;
-    int     minDP;
-    int     maxDP;
     int     minDP0;
     int     maxDP0;
     int     minDP1;
@@ -134,18 +132,14 @@ typedef struct{
 } logbook_t;
 
 /*
- *  Static function prototypes
- */
-
-
-/*
  *  Public function prototypes
  */
 
-void        logmsg(logbook_t * book, const char * action);
+void        logmsg(logbook_t *, const char *);
 room_t *    open_gate(game_t * g, gate_t * d);
-game_t *    load_game(char * filename);
-int         save_game(game_t *);
+game_t *    load_game(const char *);
+int         log_to_disk(logbook_t *, const char *);
 void        free_game(game_t *);
+void        free_logbook(logbook_t *);
 
 #endif

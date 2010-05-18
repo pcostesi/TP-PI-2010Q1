@@ -296,7 +296,6 @@ parse(FILE *stream, int *lp, int *cp)
     #undef CLEANUP
 }
 
-
 int
 gpn_to_file(FILE *stream, gpnode_p root)
 {
