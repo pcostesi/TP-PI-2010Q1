@@ -326,7 +326,6 @@ extract_enemies(game_t * game, gpnode_p root)
                     enemies[enemy->ID] = enemy;
                 } else {
                     exitval = 1;
-                    printf("Ups\n");
                     free(enemy);
                 }
             }
@@ -470,6 +469,11 @@ load_game(const char *filename)
     if (file == NULL) return NULL;
 
     root = parse(file, &line, &col);
+    if (root == NULL){
+		fclose(file);
+		free(game_p);
+		return NULL;
+	}
     if (strcmp(root->name, "Juego") != 0) return NULL;
         for (node = root->child; node != NULL; node = node->next){
             if (strcmp(node->name, "PuntosImportantes") == 0){

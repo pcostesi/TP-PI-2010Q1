@@ -67,21 +67,26 @@ main(int argc, char** argv)
     logbook_t * logbook;
     game_t * game = load_game("test.xml");
     printf("Game is %p\n", (void *) game);
-    printf( "Data about game:\n"
-            "You enter through %d and exit through %d\n"
-            "\tProfessions:\t\t%d\n"
-            "\tEnemies:\t\t%d\n"
-            "\tRooms in game:\t\t%d\n",
-            game->StartRoomID, game->ExitRoomID, game->professions_size,
-            game->enemies_size, game->rooms_size);
-    logbook = logmsg(NULL, "Test");
-    logbook = logmsg(logbook, "Test2");
-    logbook = logmsg(logbook, "Test3");
-    logbook = logmsg(logbook, "Test4");
-    logbook = logmsg(logbook, "Test5");
-    log_to_disk(logbook, "log.xml");
-    free_logbook(logbook);
-    free_game(game);
+    if (game == NULL){
+		printf("Invalid game file.\n");
+	} else {
+		printf( "Data about game:\n"
+				"You enter through %d and exit through %d\n"
+				"\tProfessions:\t\t%d\n"
+				"\tEnemies:\t\t%d\n"
+				"\tRooms in game:\t\t%d\n",
+				game->StartRoomID, game->ExitRoomID, game->professions_size,
+				game->enemies_size, game->rooms_size);
+		free_game(game);
+	}
+	logbook = logmsg(NULL, "Test");
+	logbook = logmsg(logbook, "Test2");
+	logbook = logmsg(logbook, "Test3");
+	logbook = logmsg(logbook, "Test4");
+	logbook = logmsg(logbook, "Test5");
+	log_to_disk(logbook, "log.xml");
+	free_logbook(logbook);
+
     return EXIT_SUCCESS;
 }
 

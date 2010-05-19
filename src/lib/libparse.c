@@ -58,6 +58,9 @@
 /* Static function prototypes */
 
 static char * buffer(char);
+static char * push(char *, char, size_t *, size_t *, size_t);
+static char * trim(char *, size_t);
+ 
 
 /* Public function prototypes */
 
@@ -82,6 +85,52 @@ static char * buffer(char);
  * burden of keeping most of the error checking and repetitive resizing
  * operations inside a 'transparent' buffer.
  */
+
+static char *
+trim(char * ptr, size_t last_pos)
+{
+	char * tmp;
+		tmp = realloc(ptr, last_pos + 1);
+		if (tmp == NULL){
+			ptr[last_pos] = 0;
+		} else {
+			ptr = tmp;
+			ptr[last_pos] = 0;
+	}
+	return ptr;
+}
+
+static char *
+push(char * stack, char data, size_t * cur_size, size_t * stacksize,
+	size_t increment)
+{
+	#define NEW_STACK_SIZE (* stacksize + increment)
+	char * tmp;
+	if (stack == NULL){
+		stack = malloc(NEW_STACK_SIZE);
+		* stacksize = NEW_STACK_SIZE;
+		if (stack == NULL){
+			*stacksize = 0;
+			return NULL; 
+		}
+	}
+	if (*stacksize <= *cur_size + 1){
+		tmp = realloc(stack, NEW_STACK_SIZE);
+		if (tmp != NULL){
+			stack = tmp;
+			*stacksize = NEW_STACK_SIZE;
+		} else {
+			stack[*cur_size] = 0;
+			return stack;
+		}
+	}
+	stack[*cur_size] = data;
+	*cur_size += 1;
+
+	return stack;
+	#undef NEW_STACK_SIZE
+}
+
 static char *
 buffer(char c)
 {
@@ -129,6 +178,8 @@ buffer(char c)
 
     return buf;
 }
+
+
 
 /* Public functions */
 
