@@ -48,13 +48,6 @@ roomDescription(room_t actualRoom)
 
 
 int
-main()
-{
-return 1;
-}
-
-
-int
 combat(character_t *player, enemy_t *enemy, profession_t *profession)
 {
 	int winner, turn, hit, enemyHP;
