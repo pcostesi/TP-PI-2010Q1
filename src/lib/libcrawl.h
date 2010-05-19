@@ -124,7 +124,6 @@ typedef struct LogEntry{
 
 
 typedef struct{
-    char *           name;
     character_t *   player;
     log_entry_t *   log;
     int              seed;
