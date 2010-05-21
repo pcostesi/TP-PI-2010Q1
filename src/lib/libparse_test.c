@@ -112,6 +112,14 @@ main(int argc, char** argv)
     s = strpop(str_context);
     printf("TEST STRING:\n*%s*\n", s);
     free(s);
+    strappend(' ', str_context);
+    s = strpop(str_context);
+    printf("TEST STRING:\n*%s*\n", s);
+    free(s);
+    strappend('A', str_context);
+    s = strpop(str_context);
+    printf("TEST STRING:\n*%s*\n", s);
+    free(s);
     return EXIT_SUCCESS;
 }
 

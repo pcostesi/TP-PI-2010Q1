@@ -200,6 +200,9 @@ strappend(char c, string_p s)
         if (s->buffer == NULL){
             s->buffer = malloc(BLOCKSIZE);
             if (s->buffer == NULL) return 0;
+            s->buffer_size = BLOCKSIZE;
+            s->last_non_whitespace_idx = 0;
+            s->char_idx = 0;
         } else if (s->buffer_size < s->char_idx + 2){
             tmp = realloc(s->buffer, s->buffer_size + BLOCKSIZE);
             if (tmp == NULL) return 0;
@@ -209,7 +212,7 @@ strappend(char c, string_p s)
 
         /* Set the last non-whitespace char */
         if (!isspace(c))
-            s->last_non_whitespace_idx = s->char_idx;
+            s->last_non_whitespace_idx = s->char_idx + 1;
         /* Do the actual push into the string and null-terminate it */
         s->buffer[s->char_idx++] = c;
         s->buffer[s->char_idx] = 0;
@@ -225,19 +228,11 @@ strtrm(string_p s)
             s->buffer_size >= s->last_non_whitespace_idx){
         /* Trim buffer and make room to add a trailing zero (sentinel).
          * Since array indices start at zero but sizes start at one, we
-         * need to add 2 to the last_non_whitespace_idx. */
-        if (s->last_non_whitespace_idx == 0){
-            s->buffer = realloc(s->buffer, 1);
-            s->buffer[0] = 0;
-            s->char_idx = 0;
-            s->last_non_whitespace_idx = 0;
-            s->buffer_size = 1;
-        } else {
-            s->buffer = realloc(s->buffer, s->last_non_whitespace_idx + 2);
-            s->buffer[s->last_non_whitespace_idx + 1] = 0;
-            s->char_idx = s->last_non_whitespace_idx + 1;
-            s->buffer_size = s->last_non_whitespace_idx + 2;
-        }
+         * need to add 1 to the last_non_whitespace_idx. */
+        s->buffer = realloc(s->buffer, s->last_non_whitespace_idx + 1);
+        s->buffer[s->last_non_whitespace_idx] = 0;
+        s->char_idx = s->last_non_whitespace_idx;
+        s->buffer_size = s->last_non_whitespace_idx + 1;
         exitval = s->buffer;
     }
     return exitval;
