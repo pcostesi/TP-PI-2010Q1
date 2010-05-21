@@ -127,6 +127,7 @@ typedef struct{
     character_t *   player;
     log_entry_t *   log;
     int              seed;
+    char *           filename;
 } logbook_t;
 
 /*

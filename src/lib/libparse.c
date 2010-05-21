@@ -55,88 +55,47 @@
 
 #define BLOCKSIZE 16
 
-/* Static function prototypes */
 
-static char * buffer(char);
+typedef struct String{
+    char * buffer;
+    size_t buffer_size;
+    size_t last_non_whitespace_idx;
+    size_t char_idx;
+} string_t;
 
-/* Static functions */
-
-/*
- * ===================
- * WARNING: DEPRECATED
- * ===================
- *
- * See Context-Preserving String Utils
- * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- *
- * Function buffer -- string convenience function for function parse.
- *
- * It allocates, stores and trims a string while receiving input from
- * the state machine. This is a static function because there's no need
- * from others to use it, neither it should be accessed by anyone else.
- *
- * It receives any non-zero char and stores it. It returns a pointer to
- * the null-terminated, resized, stack or NULL in case of error.
- *
- * To reset the stack you should call it with the null-char ('\0' or 0).
- * Be advised, if you don't check your input this function may be
- * subject to buffer flushing attacks!
- *
- * One key feature of this function is the fact that it aliviates the
- * burden of keeping most of the error checking and repetitive resizing
- * operations inside a 'transparent' buffer.
- */
-
-static char *
-buffer(char c)
-{
-    char * tmp_p = NULL;
-    static char * buf = NULL;
-    static int buf_size = 0;
-    static int c_size = 0;
-    static int ns_idx = 0;
-
-    if (buf_size <= c_size + 1){
-        buf_size += 16;
-        if (buf == NULL){
-            tmp_p = malloc(buf_size);
-        } else {
-            tmp_p = realloc(buf, buf_size);
-        }
-        if (tmp_p == NULL){
-            free(buf);
-            return NULL;
-        }
-        buf = tmp_p;
-        tmp_p = NULL;
-    }
-
-    buf[c_size] = c;
-    c_size++;
-
-    if (c == 0) {
-        if (c_size == 1 || ns_idx == 0){
-            free(buf);
-            tmp_p = NULL;
-        } else {
-            tmp_p = realloc(buf, ns_idx + 1);
-            if (tmp_p != NULL) tmp_p[ns_idx] = 0;
-            else tmp_p = buf;
-        }
-        buf_size = 0;
-        buf = NULL;
-        ns_idx = 0;
-        c_size = 0;
-        return tmp_p;
-    } else if (isspace(c) == 0) {
-        ns_idx = c_size;
-    }
-
-    return buf;
-}
+typedef struct GPNode{
+    gpnode_p next, prev;
+    gpnode_p child, parent;
+    char *value;
+    char *name;
+} gpnode_t;
 
 
 /* Public functions */
+
+char *
+dupstr(const char * string)
+{
+    int size = 0;
+    int idx = 0;
+    char * tmp;
+    char * new = malloc(BLOCKSIZE);
+
+    if (new == NULL) return NULL;
+    for (idx = 0; string[idx] != 0; idx++){
+        if (size >= idx){
+            size += BLOCKSIZE;
+            tmp = realloc(new, size);
+            if (tmp == NULL) return NULL;
+            new = tmp;
+        }
+        new[idx] = string[idx];
+    }
+    new[idx++] = 0;
+    new = realloc(new, idx);
+
+    return new;
+}
 
 
 /*
@@ -298,7 +257,7 @@ gpn_free(gpnode_p node)
 }
 
 gpnode_p
-child(gpnode_p node)
+new_gpn_child(gpnode_p node)
 {
     gpnode_p aux = gpn_alloc();
     if (node != NULL){
@@ -316,6 +275,74 @@ child(gpnode_p node)
     return aux;
 }
 
+gpnode_p gpn_next(gpnode_p n)
+{
+    if (n != NULL)
+        n = n->next;
+    return n;
+}
+
+gpnode_p gpn_prev(gpnode_p n)
+{
+    if (n != NULL){
+        if (n->prev != NULL && gpn_parent(n) != NULL && \
+                gpn_child(gpn_parent(n)) == n)
+            n = NULL;
+        n = n->prev;
+    }
+    return n;
+}
+
+gpnode_p gpn_parent(gpnode_p n)
+{
+    if (n != NULL) n = n->parent;
+    return n;
+}
+
+gpnode_p gpn_child(gpnode_p n)
+{
+    if (n != NULL) return n = n->child;
+    return n;
+}
+
+int
+gpn_cmp_tag(gpnode_p n, const char * c)
+{
+    if (n == NULL)
+        return 0;
+    else
+        return strcmp(gpn_get_tag(n), c) == 0;
+}
+
+void
+gpn_set_content(gpnode_p n, char * c)
+{
+    if (n != NULL) n->value = c;
+}
+
+void
+gpn_set_tag(gpnode_p n, char * c)
+{
+    if (n != NULL) n->name = c;
+}
+
+char *
+gpn_get_content(gpnode_p n)
+{
+    if (n != NULL)
+        return n->value;
+    else
+        return NULL;
+}
+
+char *
+gpn_get_tag(gpnode_p n)
+{
+    if (n != NULL)
+        return n->name;
+    else
+        return NULL;
+}
 
 /*
  * Function parse -- parses an xml-like file into a g.p. tree.
@@ -367,7 +394,7 @@ parse(FILE *stream, int *lp, int *cp)
                 /* In case we already have a node, save the buffered
                  * contents to the node and reset the buffer. */
                 if (node != NULL){
-                    node->value = strpop(&context);
+                    gpn_set_content(node, strpop(&context));
                 } else {
                     /* We check if the buffer holds any non-whitespace
                      * character, which would mean we're parsing a
@@ -398,21 +425,21 @@ parse(FILE *stream, int *lp, int *cp)
             case '>':
                 if (state == ETAG){
                     endtag = strpop(&context);
-                    if (strcmp(node->name, endtag) == 0){
+                    if (gpn_cmp_tag(node, endtag)){
                         free(endtag);
-                        if (node->parent == NULL){
+                        if (gpn_parent(node) == NULL){
                             return node;
                         } else {
-                            node = node->parent;
+                            node = gpn_parent(node);
                         }
                     } else {
                         free(endtag);
                         CLEANUP
                     }
                 } else if (state == STAG){
-                    node = child(node);
+                    node = new_gpn_child(node);
                     if (root == NULL) root = node;
-                    node->name = strpop(&context);
+                    gpn_set_tag(node, strpop(&context));
                 }
                 state = WHITESPACE;
                 break;
@@ -448,17 +475,25 @@ gpn_to_file(FILE *stream, gpnode_p root)
     int parsed = 0;
 
     while (root != NULL){
-        INDENT; fprintf(stream, "<%s>\n", root->name);
-        indent_level++;
-        if (root->value != NULL){
+        INDENT; fprintf(stream, "<%s>", gpn_get_content(root));
+        if (gpn_child(root) == NULL) {
+            if (gpn_get_content(root) != NULL)
+                fprintf(stream, "%s", gpn_get_content(root));
+        } else {
+            indent_level++;
+            fprintf(stream, "\n");
+            if (gpn_get_content(root) != NULL){
+                INDENT;
+                fprintf(stream, "%s\n", gpn_get_content(root));
+            }
+            parsed += gpn_to_file(stream, gpn_child(root));
+            fprintf(stream, "\n");
+            indent_level--;
             INDENT;
-            fprintf(stream, "%s\n", root->value);
         }
-        parsed += gpn_to_file(stream, root->child);
-        indent_level--;
-        INDENT; fprintf(stream, "</%s>\n", root->name);
+        fprintf(stream, "</%s>\n", gpn_get_tag(root));
         parsed++;
-        root = root->next;
+        root = gpn_next(root);
     }
 
     #undef INDENT

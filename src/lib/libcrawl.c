@@ -52,10 +52,7 @@
 
 /* Macros and constants */
 
-#define BLOCKSIZE 32
-
 /* Static function prototypes */
-static char *           m_strdup(const char *);
 static profession_t *  new_profession_from_gpnode(gpnode_p);
 static enemy_t *        new_enemy_from_gpnode(gpnode_p, int);
 static gate_t *         new_gate_from_gpnode(gpnode_p);
@@ -69,32 +66,6 @@ static unsigned int    extract_rooms(game_t *, gpnode_p);
 
 /* Static functions */
 
-static char *
-m_strdup(const char * string)
-{
-    int size = 0;
-    int idx = 0;
-    char * tmp;
-    char * new = malloc(BLOCKSIZE);
-
-    if (new == NULL) return NULL;
-    for (idx = 0; string[idx] != 0; idx++){
-        if (size >= idx){
-            size += BLOCKSIZE;
-            tmp = realloc(new, size);
-            if (tmp == NULL) return NULL;
-            new = tmp;
-        }
-        new[idx] = string[idx];
-    }
-    new[idx++] = 0;
-    new = realloc(new, idx);
-
-    return new;
-}
-
-#undef BLOCKSIZE
-
 static profession_t *
 new_profession_from_gpnode(gpnode_p p)
 {
@@ -103,20 +74,19 @@ new_profession_from_gpnode(gpnode_p p)
     if (p == NULL) return NULL;
     profession = calloc(1, sizeof(profession_t));
     if (profession == NULL) return NULL;
-    for (node = p->child; node != NULL; node = node->next){
-        if (strcmp(node->name, "ID") == 0){
-            profession->ID = atoi(node->value);
-        } else if (strcmp(node->name, "Nombre") == 0){
-            profession->name = node->value;
-            node->value = NULL;
-        } else if (strcmp(node->name, "MinHP") == 0){
-            profession->minHP = atoi(node->value);
-        } else if (strcmp(node->name, "MaxHP") == 0){
-            profession->maxHP = atoi(node->value);
-        } else if (strcmp(node->name, "MinDP") == 0){
-            profession->minDP = atoi(node->value);
-        } else if (strcmp(node->name, "MaxDP") == 0){
-            profession->maxDP = atoi(node->value);
+    for (node = gpn_child(p); node != NULL; node = gpn_next(node)){
+        if (gpn_cmp_tag(node, "ID")){
+            profession->ID = atoi(gpn_get_content(node));
+        } else if (gpn_cmp_tag(node, "Nombre")){
+            profession->name = dupstr(gpn_get_content(node));
+        } else if (gpn_cmp_tag(node, "MinHP")){
+            profession->minHP = atoi(gpn_get_content(node));
+        } else if (gpn_cmp_tag(node, "MaxHP")){
+            profession->maxHP = atoi(gpn_get_content(node));
+        } else if (gpn_cmp_tag(node, "MinDP")){
+            profession->minDP = atoi(gpn_get_content(node));
+        } else if (gpn_cmp_tag(node, "MaxDP")){
+            profession->maxDP = atoi(gpn_get_content(node));
         }
     }
     return profession;
@@ -135,20 +105,19 @@ new_enemy_from_gpnode(gpnode_p p, int prof)
     enemy->maxDP = calloc(prof, sizeof(int));
     enemy->minDP = calloc(prof, sizeof(int));
     enemy->prof = prof;
-    for (node = p->child; node != NULL; node = node->next){
-        if (strcmp(node->name, "ID") == 0){
-            enemy->ID = atoi(node->value);
-        } else if (strcmp(node->name, "Nombre") == 0){
-            enemy->name = node->value;
-            node->value = NULL;
-        } else if (strcmp(node->name, "MinHP") == 0){
-            enemy->minHP = atoi(node->value);
-        } else if (strcmp(node->name, "MaxHP") == 0){
-            enemy->maxHP = atoi(node->value);
-        } else if (strncmp(node->name, "MinDP-", 6) == 0){
-            enemy->minDP[atoi(strrchr(node->name, '-') + 1)] = atoi(node->value);
-        } else if (strncmp(node->name, "MaxDP-", 6) == 0){
-            enemy->maxDP[atoi(strrchr(node->name, '-') + 1)] = atoi(node->value);
+    for (node = gpn_child(p); node != NULL; node = gpn_next(node)){
+        if (gpn_cmp_tag(node, "ID")){
+            enemy->ID = atoi(gpn_get_content(node));
+        } else if (gpn_cmp_tag(node, "Nombre")){
+            enemy->name = dupstr(gpn_get_content(node));
+        } else if (gpn_cmp_tag(node, "MinHP")){
+            enemy->minHP = atoi(gpn_get_content(node));
+        } else if (gpn_cmp_tag(node, "MaxHP")){
+            enemy->maxHP = atoi(gpn_get_content(node));
+        } else if (gpn_cmp_tag(node, "MinDP-", 6)){
+            enemy->minDP[atoi(strrchr(gpn_get_tag(node), '-') + 1)] = atoi(gpn_get_content(node));
+        } else if (gpn_cmp_tag(node, "MaxDP-", 6)){
+            enemy->maxDP[atoi(strrchr(gpn_get_tag(node), '-') + 1)] = atoi(gpn_get_content(node));
         }
     }
     return enemy;
@@ -163,12 +132,11 @@ new_gate_from_gpnode(gpnode_p p)
     if (p == NULL) return NULL;
     gate = malloc(sizeof(gate_t));
 
-    for (node = p->child; node != NULL; node = node->next){
-        if (strcmp(node->name, "Nombre") == 0){
-            gate->name = node->value;
-            node->value = NULL;
-        } else if (strcmp(node->name, "Destino") == 0){
-            gate->room_id = atoi(node->value);
+    for (node = gpn_child(p); node != NULL; node = gpn_next(node)){
+        if (gpn_cmp_tag(node, "Nombre")){
+            gate->name = dupstr(gpn_get_content(node));
+        } else if (gpn_cmp_tag(node, "Destino")){
+            gate->room_id = atoi(gpn_get_content(node));
         }
     }
 
@@ -191,7 +159,7 @@ extract_gates(room_t * room, gpnode_p gates)
         room->gates = calloc(size, sizeof(gate_t *));
         for (node = gates->child; node != NULL && exitval == 0;
             node = node->next, idx++){
-            if (strcmp(node->name, "Puerta") == 0)
+            if (gpn_cmp_tag(node, "Puerta"))
                 room->gates[idx] = new_gate_from_gpnode(node);
         }
 
@@ -210,13 +178,13 @@ extract_enemy_ids(room_t * room, gpnode_p enemies)
 
     room->enemies_size = 0;
     room->enemy_ids = NULL;
-    for (node = enemies->child; node != NULL; node = node->next){
-        if (strcmp(node->name, "Cantidad") == 0){
-            room->enemies_size = atoi(node->value);
+    for (node = gpn_child(enemies); node != NULL; node = gpn_next(node)){
+        if (gpn_cmp_tag(node, "Cantidad")){
+            room->enemies_size = atoi(gpn_get_content(node));
             room->enemy_ids = calloc(room->enemies_size, sizeof(int));
-        } else if (strcmp(node->name, "Enemigo") == 0 && \
-                strcmp(node->child->name, "ID") == 0){
-            room->enemy_ids[idx++] = atoi(node->child->value);
+        } else if (gpn_cmp_tag(node, "Enemigo") && \
+                gpn_cmp_tag(gpn_child(node), "ID")){
+            room->enemy_ids[idx++] = atoi(gpn_get_content(gpn_child(node)));
         } else {
             exitval = 1;
         }
@@ -237,15 +205,13 @@ new_room_from_gpnode(gpnode_p p)
     room->gates_size = 0;
     room->enemy_ids = NULL;
     room->enemies_size = 0;
-    for (node = p->child; node != NULL; node = node->next){
+    for (node = gpn_child(p); node != NULL; node = gpn_next(node)){
         if (strcmp(node->name, "ID") == 0){
-            room->ID = atoi(node->value);
+            room->ID = atoi(gpn_get_content(node));
         } else if (strcmp(node->name, "Nombre") == 0){
-            room->name = node->value;
-            node->value = NULL;
+            room->name = dupstr(gpn_get_content(node));
         } else if (strcmp(node->name, "Descripcion") == 0){
-            room->description = node->value;
-            node->value = NULL;
+            room->description = dupstr(gpn_get_content(node));
         } else if (strcmp(node->name, "Puertas") == 0){
             extract_gates(room, node);
         } else if (strcmp(node->name, "Enemigos") == 0){
@@ -262,15 +228,15 @@ extract_professions(game_t * game, gpnode_p root)
     profession_t * profession;
     int prof_size = 0;
     int exitval = 0;
-    if (strcmp(root->name, "Profesiones") == 0){
-        for(root = root->child; root != NULL && exitval == 0;
-            root = root->next){
+    if (gpn_cmp_tag(root, "Profesiones")){
+        for(root = gpn_child(root); root != NULL && exitval == 0;
+            root = gpn_next(root)){
             if (professions == NULL){
-                if (strcmp(root->name, "Cantidad") == 0){
-                    prof_size = atoi(root->value);
+                if (gpn_cmp_tag(root, "Cantidad")){
+                    prof_size = atoi(gpn_get_content(root));
                     professions = calloc(prof_size, sizeof(profession_t *));
                 } else exitval = 1;
-            } else if (strcmp(root->name, "Profesion") == 0){
+            } else if (gpn_cmp_tag(root, "Profesion")){
                 profession = new_profession_from_gpnode(root);
                 if (profession != NULL && profession->ID < prof_size)
                     professions[profession->ID] = profession;
@@ -292,12 +258,12 @@ extract_important_points(game_t * game, gpnode_p root)
     int exitval = 0;
     gpnode_p child;
 
-    if (strcmp(root->name, "PuntosImportantes") == 0){
-        for(child = root->child; child != NULL; child = child->next){
-            if(strcmp(child->name, "HabitacionInicioID") == 0){
-                game->StartRoomID = atoi(child->value);
-            } else if(strcmp(child->name, "HabitacionSalidaID") == 0){
-                game->ExitRoomID = atoi(child->value);
+    if (gpn_cmp_tag(root, "PuntosImportantes")){
+        for(child = gpn_child(root); child != NULL; child = gpn_next(child)){
+            if(gpn_cmp_tag(child, "HabitacionInicioID")){
+                game->StartRoomID = atoi(gpn_get_content(child));
+            } else if(gpn_cmp_tag(child, "HabitacionSalidaID")){
+                game->ExitRoomID = atoi(gpn_get_content(child));
             } else {
                 exitval = 1;
             }
@@ -313,14 +279,14 @@ extract_enemies(game_t * game, gpnode_p root)
     enemy_t ** enemies = NULL;
     enemy_t * enemy;
     int enem_size = 0;
-    if (strcmp(root->name, "Enemigos") == 0){
-        for (root = root->child; root != NULL; root = root->next){
+    if (gpn_cmp_tag(root, "Enemigos")){
+        for (root = gpn_child(root); root != NULL; root = gpn_next(root)){
             if (enemies == NULL){
-                if (strcmp(root->name, "Cantidad") == 0){
+                if (gpn_cmp_tag(root, "Cantidad")){
                     enem_size = atoi(root->value);
                     enemies = calloc(enem_size, sizeof(enemy_t *));
                 }
-            } else if (strcmp(root->name, "Enemigo") == 0){
+            } else if (gpn_cmp_tag(root, "Enemigo")){
                 enemy = new_enemy_from_gpnode(root, game->professions_size);
                 if (enemy != NULL && enemy->ID < enem_size){
                     enemies[enemy->ID] = enemy;
@@ -344,15 +310,15 @@ extract_rooms(game_t * game, gpnode_p root)
     room_t * room;
     int room_size = 0;
 
-    if (strcmp(root->name, "Laberinto") == 0){
-        for(root = root->child; root != NULL && exitval == 0;
-            root = root->next){
+    if (gpn_cmp_tag(root, "Laberinto")){
+        for(root = gpn_child(root); root != NULL && exitval == 0;
+            root = gpn_next(root)){
             if (rooms == NULL){
-                if (strcmp(root->name, "Cantidad") == 0){
-                    room_size = atoi(root->value);
+                if (gpn_cmp_tag(root, "Cantidad")){
+                    room_size = atoi(gpn_get_content(root));
                     rooms = calloc(room_size, sizeof(room_t *));
                 }
-            } else if (strcmp(root->name, "Habitacion") == 0){
+            } else if (gpn_cmp_tag(root, "Habitacion")){
                 room = new_room_from_gpnode(root);
                 if (room != NULL && room->ID < room_size)
                     rooms[room->ID] = room;
@@ -419,28 +385,42 @@ log_to_disk(logbook_t * book, const char * filename)
 
     fp = fopen(filename, "w");
 
-    root = child(NULL);
+    root = new_gpn_child(NULL);
     if (root == NULL) return 1;
-    root->name = m_strdup("Log");
-    root->value = NULL;
+    gpn_set_tag(root, dupstr("Log"));
 
-    node = child(root);
-    node->name = m_strdup("Seed");
-    sprintf(timestring, "%-20d", book->seed);
-    node->value = m_strdup(timestring);
+    node = new_gpn_child(root);
+    gpn_set_tag(node ,dupstr("Seed"));
+    sprintf(timestring, "%20d", book->seed);
+    gpn_set_content(node, dupstr(timestring));
 
-    for (entry = book->log; entry != NULL && exitval != 0; entry = entry->next){
-        node = child(root);
-        node->name = m_strdup("Entry");
+    if (book->filename != NULL){
+        node = new_gpn_child(root);
+        gpn_set_tag(node, dupstr("GameFile"));
+        gpn_set_value(node, dupstr(book->filename));
+    }
 
-        time_node = child(node);
-        time_node->name = m_strdup("Time");
+    if (book->player != NULL){
+        node = new_gpn_child(root);
+        gpn_set_tag(node, dupstr("Character"));
+        node = new_gpn_child(node);
+        gpn_set_name(node, dupstr("Name"));
+        gpn_set_content(node, dupstr(book->player->name));
+    }
+
+    for (entry = book->log; entry != NULL && exitval == 0;
+            entry = entry->next){
+        node = new_gpn_child(root);
+        gpn_set_tag(node, dupstr("Entry"));
+
+        time_node = new_gpn_child(node);
+        gpn_set_tag(time_node, dupstr("Time"));
         strftime(timestring, 20, "%d/%m/%Y %H:%M:%S", gmtime(&entry->time));
-        time_node->value = m_strdup(timestring);
+        gpn_set_content(time_node, dupstr(timestring));
 
-        action_node = child(node);
-        action_node->name = m_strdup("Action");
-        action_node->value = m_strdup(entry->action);
+        action_node = new_gpn_child(node);
+        gpn_set_tag(action_node, dupstr("Action"));
+        gpn_set_content(action_node, dupstr(entry->action));
     }
     gpn_to_file(fp, root);
     fclose(fp);
@@ -470,19 +450,19 @@ load_game(const char *filename)
 
     root = parse(file, &line, &col);
     if (root == NULL){
-		fclose(file);
-		free(game_p);
-		return NULL;
-	}
-    if (strcmp(root->name, "Juego") != 0) return NULL;
-        for (node = root->child; node != NULL; node = node->next){
-            if (strcmp(node->name, "PuntosImportantes") == 0){
+        fclose(file);
+        free(game_p);
+        return NULL;
+    }
+    if (!gpn_cmp_tag(root, "Juego")) return NULL;
+        for (node = gpn_child(root); node != NULL; node = gpn_next(node)){
+            if (gpn_cmp_tag(node, "PuntosImportantes")){
                 extract_important_points(game_p, node);
-            } else if (strcmp(node->name, "Profesiones") == 0){
+            } else if (gpn_cmp_tag(node, "Profesiones")){
                 extract_professions(game_p, node);
-            } else if (strcmp(node->name, "Enemigos") == 0){
+            } else if (gpn_cmp_tag(node, "Enemigos")){
                 extract_enemies(game_p, node);
-            } else if (strcmp(node->name, "Laberinto") == 0){
+            } else if (gpn_cmp_tag(node, "Laberinto")){
                 extract_rooms(game_p, node);
             }
         }

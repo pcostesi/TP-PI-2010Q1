@@ -44,38 +44,31 @@
 /* GPNode -- General Purpose Node for representation of tree-like data. */
 typedef struct GPNode * gpnode_p;
 
-typedef struct GPNode{
-    gpnode_p next, prev;
-    gpnode_p child, parent;
-    char *value;
-    char *name;
-} gpnode_t;
-
-
 /*
  * String -- Convinience 'Environment Carrier' for str* functions in
  * libparse.
- *
- * THOU SHALT NOT ACCESS THE INTERNALS OF THIS STRUCT. Failure to attain
- * to this commandment, doom and dismay may be cast upon thine soul. Ye
- * hath been warn'd. */
+ */
+
 typedef struct String * string_p;
 
-typedef struct String{
-    char * buffer;
-    size_t buffer_size;
-    size_t last_non_whitespace_idx;
-    size_t char_idx;
-} string_t;
 
 /* Public function prototypes */
 
-gpnode_p   parse(FILE *, int *, int *);
-int         gpn_to_file(FILE *, gpnode_p);
-gpnode_p   gpn_alloc(void);
-void        gpn_init(gpnode_p);
-void        gpn_free(gpnode_p);
-gpnode_p   child(gpnode_p);
+int gpn_to_file(FILE *, gpnode_p);
+int gpn_cmp_tag(gpnode_p, const char *);
+void gpn_init(gpnode_p);
+void gpn_free(gpnode_p);
+gpnode_p gpn_alloc(void);
+gpnode_p parse(FILE *, int *, int *);
+gpnode_p new_gpn_child(gpnode_p);
+gpnode_p gpn_next(gpnode_p);
+gpnode_p gpn_prev(gpnode_p);
+gpnode_p gpn_parent(gpnode_p);
+gpnode_p gpn_child(gpnode_p);
+void gpn_set_tag(gpnode_p, char *);
+void gpn_set_content(gpnode_p, char *);
+char * gpn_get_tag(gpnode_p);
+char * gpn_get_content(gpnode_p);
 
 
 void strinit(string_p);
@@ -84,6 +77,6 @@ int strappend(char, string_p);
 char * strtrm(string_p);
 char * strpop(string_p);
 void strfree(string_p);
-
+char * dupstr(const char *);
 
 #endif

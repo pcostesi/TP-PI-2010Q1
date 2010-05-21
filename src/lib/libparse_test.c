@@ -91,9 +91,7 @@ main(int argc, char** argv)
     fclose(fp);
 
     char * s = NULL;
-    /*string_p str_context = strnew();*/
-    string_t str_;
-    string_p str_context = &str_;
+    string_p str_context = strnew();
     strinit(str_context);
     strappend('h', str_context);
     strappend('o', str_context);
@@ -120,6 +118,7 @@ main(int argc, char** argv)
     s = strpop(str_context);
     printf("TEST STRING:\n*%s*\n", s);
     free(s);
+    strfree(str_context);
     return EXIT_SUCCESS;
 }
 
