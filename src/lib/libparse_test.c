@@ -58,10 +58,11 @@ void gpn_print(gpnode_p);
 int
 main(int argc, char** argv)
 {
+
     FILE *fp;
     int line, col, parsed;
     gpnode_p root;
-    char * filename;
+    char * filename = NULL;
     if (argc == 1){
         printf("Write the name of the file you want to parse:\n");
         filename = malloc(33);
@@ -74,6 +75,7 @@ main(int argc, char** argv)
     fp = fopen(filename, "r");
     if (fp == NULL){
         printf("File doesn't exist!\n");
+        free(filename);
         return 2;
     }
     root = parse(fp, &line, &col);
@@ -87,6 +89,29 @@ main(int argc, char** argv)
     printf("\nParsed: %d nodes.\n", parsed);
     gpn_free(root);
     fclose(fp);
+
+    char * s = NULL;
+    /*string_p str_context = strnew();*/
+    string_t str_;
+    string_p str_context = &str_;
+    strinit(str_context);
+    strappend('h', str_context);
+    strappend('o', str_context);
+    strappend('l', str_context);
+    strappend('a', str_context);
+    strappend(' ', str_context);
+    strappend('\n', str_context);
+    strappend(' ', str_context);
+    strappend('h', str_context);
+    strappend('o', str_context);
+    strappend('l', str_context);
+    strappend('a', str_context);
+    strappend(' ', str_context);
+    strappend('\n', str_context);
+    strappend(' ', str_context);
+    s = strpop(str_context);
+    printf("TEST STRING:\n*%s*\n", s);
+    free(s);
     return EXIT_SUCCESS;
 }
 

@@ -58,16 +58,17 @@
 /* Static function prototypes */
 
 static char * buffer(char);
-static char * push(char *, char, size_t *, size_t *, size_t);
-static char * trim(char *, size_t);
- 
-
-/* Public function prototypes */
 
 /* Static functions */
 
-
 /*
+ * ===================
+ * WARNING: DEPRECATED
+ * ===================
+ *
+ * See Context-Preserving String Utils
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *
  * Function buffer -- string convenience function for function parse.
  *
  * It allocates, stores and trims a string while receiving input from
@@ -85,51 +86,6 @@ static char * trim(char *, size_t);
  * burden of keeping most of the error checking and repetitive resizing
  * operations inside a 'transparent' buffer.
  */
-
-static char *
-trim(char * ptr, size_t last_pos)
-{
-	char * tmp;
-		tmp = realloc(ptr, last_pos + 1);
-		if (tmp == NULL){
-			ptr[last_pos] = 0;
-		} else {
-			ptr = tmp;
-			ptr[last_pos] = 0;
-	}
-	return ptr;
-}
-
-static char *
-push(char * stack, char data, size_t * cur_size, size_t * stacksize,
-	size_t increment)
-{
-	#define NEW_STACK_SIZE (* stacksize + increment)
-	char * tmp;
-	if (stack == NULL){
-		stack = malloc(NEW_STACK_SIZE);
-		* stacksize = NEW_STACK_SIZE;
-		if (stack == NULL){
-			*stacksize = 0;
-			return NULL; 
-		}
-	}
-	if (*stacksize <= *cur_size + 1){
-		tmp = realloc(stack, NEW_STACK_SIZE);
-		if (tmp != NULL){
-			stack = tmp;
-			*stacksize = NEW_STACK_SIZE;
-		} else {
-			stack[*cur_size] = 0;
-			return stack;
-		}
-	}
-	stack[*cur_size] = data;
-	*cur_size += 1;
-
-	return stack;
-	#undef NEW_STACK_SIZE
-}
 
 static char *
 buffer(char c)
@@ -180,15 +136,154 @@ buffer(char c)
 }
 
 
-
 /* Public functions */
+
+
+/*
+ * strinit -- Context initializer for String Utilities.
+ *
+ * This utility function should be called if you're using the stack to
+ * correctly set up the structure (hereon called 'environment carrier').
+ *
+ */
+void
+strinit(string_p str)
+{
+    if (str != NULL){
+        str->buffer = NULL;
+        str->buffer_size = 0;
+        str->char_idx = 0;
+        str->last_non_whitespace_idx = 0;
+    }
+
+}
+
+/*
+ * strfree -- frees any heap-alloc'd Environment Carrier and its buffer.
+ */
+void
+strfree(string_p s)
+{
+    if (s != NULL)
+        free(s->buffer);
+    free(s);
+}
+
+/*
+ * strnew -- heap-allocate a new Environment Carrier.
+ *
+ * This function implicitly calls strinit, so you don't have to call it.
+ */
+string_p
+strnew(void)
+{
+    string_p newstring = malloc(sizeof(string_t));
+    strinit(newstring);
+    return newstring;
+}
+
+/*
+ * strappend -- push a new character into the buffer.
+ *
+ * Pushes any non-zero character and echoes. If anything goes wrong
+ * (like out-of-memory errors) it returns 0. KEEP IN MIND THAT IF YOU
+ * PUSH 0 YOU WILL GET 0.
+ */
+int
+strappend(char c, string_p s)
+{
+    char * tmp;
+    if (s != NULL && c != 0){
+        /* Check the buffer size. We add 2 to the last_char size
+         * because we need to push a char and add a trailing zero.
+         * (for the sake of safety). */
+        if (s->buffer == NULL){
+            s->buffer = malloc(BLOCKSIZE);
+            if (s->buffer == NULL) return 0;
+        } else if (s->buffer_size < s->char_idx + 2){
+            tmp = realloc(s->buffer, s->buffer_size + BLOCKSIZE);
+            if (tmp == NULL) return 0;
+            s->buffer = tmp;
+            s->buffer_size += BLOCKSIZE;
+        }
+
+        /* Set the last non-whitespace char */
+        if (!isspace(c))
+            s->last_non_whitespace_idx = s->char_idx;
+        /* Do the actual push into the string and null-terminate it */
+        s->buffer[s->char_idx++] = c;
+        s->buffer[s->char_idx] = 0;
+    }
+    return c;
+}
+
+char *
+strtrm(string_p s)
+{
+    char * exitval = NULL;
+    if (s != NULL && s->buffer != NULL && \
+            s->buffer_size >= s->last_non_whitespace_idx){
+        /* Trim buffer and make room to add a trailing zero (sentinel).
+         * Since array indices start at zero but sizes start at one, we
+         * need to add 2 to the last_non_whitespace_idx. */
+        if (s->last_non_whitespace_idx == 0){
+            s->buffer = realloc(s->buffer, 1);
+            s->buffer[0] = 0;
+            s->char_idx = 0;
+            s->last_non_whitespace_idx = 0;
+            s->buffer_size = 1;
+        } else {
+            s->buffer = realloc(s->buffer, s->last_non_whitespace_idx + 2);
+            s->buffer[s->last_non_whitespace_idx + 1] = 0;
+            s->char_idx = s->last_non_whitespace_idx + 1;
+            s->buffer_size = s->last_non_whitespace_idx + 2;
+        }
+        exitval = s->buffer;
+    }
+    return exitval;
+}
+
+
+/*
+ * strpop -- detaches a null-terminated, trimmed string and resets the
+ * Environment Carrier.
+ *
+ * It's your sole responsibility to clean up the detached string.
+ */
+char *
+strpop(string_p s)
+{
+    char * exitval = NULL;
+    if (s != NULL){
+        exitval = strtrm(s);
+        s->buffer = NULL;
+        s->buffer_size = 0;
+        s->last_non_whitespace_idx = 0;
+        s->char_idx = 0;
+    }
+    return exitval;
+}
+
+
+void
+gpn_init(gpnode_p node){
+    if (node != NULL){
+        node->next = NULL;
+        node->prev = node;
+        node->value = NULL;
+        node->name = NULL;
+        node->next = NULL;
+        node->child = NULL;
+    }
+}
 
 gpnode_p
 gpn_alloc(void)
 {
     gpnode_p node;
-    node = calloc(1, sizeof(gpnode_t));
+    node = malloc(sizeof(gpnode_t));
     if (node == NULL) return NULL;
+    gpn_init(node);
     return node;
 }
 
@@ -246,7 +341,7 @@ parse(FILE *stream, int *lp, int *cp)
     #define CLEANUP     if (lp != NULL) *lp = line;         \
                         if (cp != NULL) *cp= col - 1;       \
                         gpn_free(root);                      \
-                        free(buffer(0));                     \
+                        free(strpop(&context));                     \
                         return NULL;
 
     char *endtag;
@@ -255,6 +350,8 @@ parse(FILE *stream, int *lp, int *cp)
     static enum States {STAG, ETAG, DATA, WHITESPACE } state;
     int input, line = 0, col = 0;
     state = WHITESPACE;
+    string_t context;
+    strinit(&context);
 
     /* This is the *only* explicit loop. Realloc may increase the
      * worst-case complexity of this function, but only for >16 char
@@ -275,12 +372,12 @@ parse(FILE *stream, int *lp, int *cp)
                 /* In case we already have a node, save the buffered
                  * contents to the node and reset the buffer. */
                 if (node != NULL){
-                    node->value = buffer(0);
+                    node->value = strpop(&context);
                 } else {
                     /* We check if the buffer holds any non-whitespace
                      * character, which would mean we're parsing a
                      * non-standard file and we should complain. */
-                    endtag = buffer(0);
+                    endtag = strpop(&context);
                     if (endtag != NULL){
                         free(endtag);
                         CLEANUP
@@ -299,13 +396,13 @@ parse(FILE *stream, int *lp, int *cp)
                 } else if (state == ETAG){
                     CLEANUP
                 } else {
-                    buffer(input);
+                    strappend(input, &context);
                 }
                 break;
 
             case '>':
                 if (state == ETAG){
-                    endtag = buffer(0);
+                    endtag = strpop(&context);
                     if (strcmp(node->name, endtag) == 0){
                         free(endtag);
                         if (node->parent == NULL){
@@ -320,20 +417,21 @@ parse(FILE *stream, int *lp, int *cp)
                 } else if (state == STAG){
                     node = child(node);
                     if (root == NULL) root = node;
-                    node->name = buffer(0);
+                    node->name = strpop(&context);
                 }
                 state = WHITESPACE;
                 break;
 
             default:
                 if(isspace(input) && input != 0){
-                    if (state != WHITESPACE)
-                        buffer(input);
+                    if (state != WHITESPACE){
+                        strappend(input, &context);
+                    }
                 } else if (input != 0){
                     if (state == WHITESPACE){
                         state = DATA;
                     }
-                    buffer(input);
+                    strappend(input, &context);
                 }
         }
 
