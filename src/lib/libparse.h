@@ -56,6 +56,7 @@ typedef struct String * string_p;
 
 int gpn_to_file(FILE *, gpnode_p);
 int gpn_cmp_tag(gpnode_p, const char *);
+int gpn_ncmp_tag(gpnode_p, const char *, int);
 void gpn_init(gpnode_p);
 void gpn_free(gpnode_p);
 gpnode_p gpn_alloc(void);
@@ -65,6 +66,7 @@ gpnode_p gpn_next(gpnode_p);
 gpnode_p gpn_prev(gpnode_p);
 gpnode_p gpn_parent(gpnode_p);
 gpnode_p gpn_child(gpnode_p);
+void gpn_link_as_child(gpnode_p, gpnode_p);
 void gpn_set_tag(gpnode_p, char *);
 void gpn_set_content(gpnode_p, char *);
 char * gpn_get_tag(gpnode_p);

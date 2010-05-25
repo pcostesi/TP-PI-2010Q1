@@ -1,5 +1,5 @@
 /*
- *      libcrawl.h
+ *      libcrawl.c
  *
  *      Copyright 2010:
  *          Sebastián Maio <email@goes.here>
@@ -26,9 +26,9 @@
  *      A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
  *      OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  *      SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- *      LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ *      LIMITED TO, PROCUREMENT OF SUBSTARTTAGITUTE GOODS OR SERVICES; LOSS OF USE,
  *      DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- *      THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ *      THEORY OF LIABILITY, WHETHER IN CONTRACT, STARTTAGRICT LIABILITY, OR TORT
  *      (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  *      OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -57,88 +57,92 @@
  */
 
 typedef struct Profession{
-    int     ID;
-    char *  name;
-    int     minHP;
-    int     maxHP;
-    int     minDP;
-    int     maxDP;
+	int		ID;
+	char *	name;
+	int		minHP;
+	int		maxHP;
+	int		minDP;
+	int		maxDP;
 } profession_t;
 
 
 typedef struct Enemy{
-    int     ID;
-    char *  name;
-    int     minHP;
-    int     maxHP;
-    int *   minDP;
-    int *   maxDP;
-    int     prof;
+	int		ID;
+	char *	name;
+	int		minHP;
+	int		maxHP;
+	int *	minDP;
+	int *	maxDP;
+	int		prof;
 } enemy_t;
 
 
 typedef struct Gate{
-    int     room_id;
-    char *  name;
+	int		room_id;
+	char *	name;
 } gate_t;
 
 
 typedef struct Room{
-    int         ID;
-    char *      name;
-    char *      description;
-    gate_t **   gates;
-    int         gates_size;
-    int *       enemy_ids;
-    int         enemies_size;
-    int         visited;
+	int			ID;
+	char *		name;
+	char *		description;
+	gate_t **	gates;
+	int			gates_size;
+	int *		enemy_ids;
+	int			enemies_size;
+	int			visited;
 } room_t;
 
 
 typedef struct Game{
-    int                 StartRoomID;
-    int                 ExitRoomID;
-    profession_t **    professions;
-    int                 professions_size;
-    enemy_t **         enemies;
-    int                 enemies_size;
-    room_t **          rooms;
-    int                 rooms_size;
+	int					StartRoomID;
+	int					ExitRoomID;
+	profession_t **	professions;
+	int					professions_size;
+	enemy_t **			enemies;
+	int					enemies_size;
+	room_t **			rooms;
+	int					rooms_size;
 } game_t;
 
 
 typedef struct Character{
-    int     roomID;
-    int     professionID;
-    int     HP;
-    char *  name;
+	int		roomID;
+	int		professionID;
+	int		HP;
+	char *	name;
 } character_t;
 
 
 
 typedef struct LogEntry{
-    time_t              time;
-    const char *        action;
-    struct LogEntry *  next;
+	time_t				time;
+	const char *		action;
+	struct LogEntry *	next;
 } log_entry_t;
 
 
 typedef struct{
-    character_t *   player;
-    log_entry_t *   log;
-    int              seed;
-    char *           filename;
+	character_t *	player;
+	log_entry_t *	log;
+	int				seed;
+	char *			filename;
 } logbook_t;
 
 /*
  *  Public function prototypes
  */
 
-logbook_t *logmsg(logbook_t *, const char *);
-room_t *    open_gate(game_t * g, gate_t * d);
-game_t *    load_game(const char *);
-int         log_to_disk(logbook_t *, const char *);
-void        free_game(game_t *);
-void        free_logbook(logbook_t *);
+logbook_t *	logmsg(logbook_t *, const char *);
+game_t *		load_game(const char *);
+int				log_to_disk(logbook_t *, const char *);
+void			free_game(game_t *);
+void            free_professions(game_t *);
+void            free_enemies(game_t *);
+void            free_rooms(game_t *);
+void			free_logbook(logbook_t *);
+void            save_state(game_t *, logbook_t *, const char *);
+game_t *            load_state(const char *, logbook_t *);
 
 #endif

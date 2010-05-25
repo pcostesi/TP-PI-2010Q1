@@ -223,7 +223,7 @@ void
 gpn_init(gpnode_p node){
     if (node != NULL){
         node->next = NULL;
-        node->prev = node;
+        node->prev = NULL;
         node->value = NULL;
         node->name = NULL;
         node->next = NULL;
@@ -256,22 +256,27 @@ gpn_free(gpnode_p node)
     }
 }
 
+void
+gpn_link_as_child(gpnode_p parent, gpnode_p child)
+{
+    if (parent != NULL && child != NULL){
+        child->parent = parent;
+        if (parent->child != NULL){
+            child->prev = parent->child->prev;
+            child->prev->next = child;
+            parent->child->prev = child;
+        } else {
+            child->prev = child;
+            parent->child = child;
+        }
+    }
+}
+
 gpnode_p
 new_gpn_child(gpnode_p node)
 {
     gpnode_p aux = gpn_alloc();
-    if (node != NULL){
-        aux->parent = node;
-        if (node->child != NULL){
-            aux->prev = node->child->prev;
-            aux->prev->next = aux;
-            node->child->prev = aux;
-        } else {
-            aux->prev = aux;
-            node->child = aux;
-        }
-    }
-
+    gpn_link_as_child(node, aux);
     return aux;
 }
 
@@ -301,7 +306,8 @@ gpnode_p gpn_parent(gpnode_p n)
 
 gpnode_p gpn_child(gpnode_p n)
 {
-    if (n != NULL) return n = n->child;
+    if (n != NULL)
+        n = n->child;
     return n;
 }
 
@@ -314,16 +320,27 @@ gpn_cmp_tag(gpnode_p n, const char * c)
         return strcmp(gpn_get_tag(n), c) == 0;
 }
 
+int
+gpn_ncmp_tag(gpnode_p n, const char * c, int h)
+{
+    if (n == NULL)
+        return 0;
+    else
+        return strncmp(gpn_get_tag(n), c, h) == 0;
+}
+
 void
 gpn_set_content(gpnode_p n, char * c)
 {
-    if (n != NULL) n->value = c;
+    if (n != NULL)
+        n->value = c;
 }
 
 void
 gpn_set_tag(gpnode_p n, char * c)
 {
-    if (n != NULL) n->name = c;
+    if (n != NULL)
+        n->name = c;
 }
 
 char *
@@ -371,25 +388,24 @@ parse(FILE *stream, int *lp, int *cp)
     gpnode_p root = NULL;
     static enum States {STAG, ETAG, DATA, WHITESPACE } state;
     int input, line = 0, col = 0;
-    state = WHITESPACE;
     string_t context;
+    state = WHITESPACE;
     strinit(&context);
 
     /* This is the *only* explicit loop. Realloc may increase the
      * worst-case complexity of this function, but only for >16 char
      * words. */
     while ((input = fgetc(stream)) != EOF){
-
         /* Count lines and cols. */
         if(input == '\n'){
             col = 0;
             line++;
         } else
             col++;
-
+        
+        
         /* Main dispatcher -- Input (and not state) driven */
         switch(input){
-
             case '<':
                 /* In case we already have a node, save the buffered
                  * contents to the node and reset the buffer. */
@@ -438,7 +454,8 @@ parse(FILE *stream, int *lp, int *cp)
                     }
                 } else if (state == STAG){
                     node = new_gpn_child(node);
-                    if (root == NULL) root = node;
+                    if (root == NULL)
+                        root = node;
                     gpn_set_tag(node, strpop(&context));
                 }
                 state = WHITESPACE;
@@ -446,20 +463,17 @@ parse(FILE *stream, int *lp, int *cp)
 
             default:
                 if(isspace(input) && input != 0){
-                    if (state != WHITESPACE){
+                    if (state != WHITESPACE)
                         strappend(input, &context);
-                    }
                 } else if (input != 0){
-                    if (state == WHITESPACE){
+                    if (state == WHITESPACE)
                         state = DATA;
-                    }
                     strappend(input, &context);
                 }
         }
 
     }
-
-    return node;
+    return root;
 
     #undef CLEANUP
 }
@@ -475,7 +489,8 @@ gpn_to_file(FILE *stream, gpnode_p root)
     int parsed = 0;
 
     while (root != NULL){
-        INDENT; fprintf(stream, "<%s>", gpn_get_content(root));
+        INDENT; fprintf(stream, "<%s>", gpn_get_tag(root));
+        
         if (gpn_child(root) == NULL) {
             if (gpn_get_content(root) != NULL)
                 fprintf(stream, "%s", gpn_get_content(root));
@@ -487,7 +502,6 @@ gpn_to_file(FILE *stream, gpnode_p root)
                 fprintf(stream, "%s\n", gpn_get_content(root));
             }
             parsed += gpn_to_file(stream, gpn_child(root));
-            fprintf(stream, "\n");
             indent_level--;
             INDENT;
         }
