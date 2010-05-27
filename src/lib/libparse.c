@@ -53,7 +53,7 @@
 
 /* Macros and constants */
 
-#define BLOCKSIZE 16
+#define BLOCKSIZE 32
 
 
 typedef struct String{
@@ -76,29 +76,13 @@ typedef struct GPNode{
 char *
 dupstr(const char * string)
 {
-    int size = 0;
-    int idx = 0;
-    char * tmp;
-    char * new = malloc(BLOCKSIZE);
-
-    if (new == NULL) return NULL;
-    for (idx = 0; string[idx] != 0; idx++){
-        if (size >= idx){
-            size += BLOCKSIZE;
-            tmp = realloc(new, size);
-            if (tmp == NULL) return NULL;
-            new = tmp;
-        }
-        new[idx] = string[idx];
-    }
-    new[idx++] = 0;
-    new = realloc(new, idx);
-
+    char * new = malloc(strlen(string) + 1);
+    if (new != NULL) strcpy(new, string);
     return new;
 }
 
 
-/*
+/**
  * strinit -- Context initializer for String Utilities.
  *
  * This utility function should be called if you're using the stack to
@@ -117,7 +101,7 @@ strinit(string_p str)
 
 }
 
-/*
+/**
  * strfree -- frees any heap-alloc'd Environment Carrier and its buffer.
  */
 void
@@ -128,9 +112,9 @@ strfree(string_p s)
     free(s);
 }
 
-/*
- * strnew -- heap-allocate a new Environment Carrier.
- *
+/**
+ * @brief strnew -- heap-allocate a new String Environment Carrier.
+ * @return New String Environment Carrier.
  * This function implicitly calls strinit, so you don't have to call it.
  */
 string_p
@@ -141,7 +125,7 @@ strnew(void)
     return newstring;
 }
 
-/*
+/**
  * strappend -- push a new character into the buffer.
  *
  * Pushes any non-zero character and echoes. If anything goes wrong
@@ -198,7 +182,7 @@ strtrm(string_p s)
 }
 
 
-/*
+/**
  * strpop -- detaches a null-terminated, trimmed string and resets the
  * Environment Carrier.
  *
@@ -223,7 +207,7 @@ void
 gpn_init(gpnode_p node){
     if (node != NULL){
         node->next = NULL;
-        node->prev = NULL;
+        node->prev = node;
         node->value = NULL;
         node->name = NULL;
         node->next = NULL;
@@ -361,8 +345,15 @@ gpn_get_tag(gpnode_p n)
         return NULL;
 }
 
-/*
- * Function parse -- parses an xml-like file into a g.p. tree.
+/**
+ * @brief Function parse -- parses an xml-like file into a g.p. tree.
+ *
+ * @param stream: the input stream.
+ * @param lp: the error line variable (or NULL).
+ * @param cp: the error column variable.
+ *
+ * @return A pointer to the root of the parsed tree or NULL
+ * in case of error.
  *
  * This function reads data from a FILE stream and parses it using a
  * simple one-way, non-recursive state machine.
@@ -380,7 +371,7 @@ parse(FILE *stream, int *lp, int *cp)
     #define CLEANUP     if (lp != NULL) *lp = line;         \
                         if (cp != NULL) *cp= col - 1;       \
                         gpn_free(root);                      \
-                        free(strpop(&context));                     \
+                        free(strpop(&context));              \
                         return NULL;
 
     char *endtag;
@@ -389,8 +380,8 @@ parse(FILE *stream, int *lp, int *cp)
     static enum States {STAG, ETAG, DATA, WHITESPACE } state;
     int input, line = 0, col = 0;
     string_t context;
-    state = WHITESPACE;
     strinit(&context);
+    state = WHITESPACE;
 
     /* This is the *only* explicit loop. Realloc may increase the
      * worst-case complexity of this function, but only for >16 char
@@ -402,8 +393,8 @@ parse(FILE *stream, int *lp, int *cp)
             line++;
         } else
             col++;
-        
-        
+
+
         /* Main dispatcher -- Input (and not state) driven */
         switch(input){
             case '<':
@@ -490,7 +481,7 @@ gpn_to_file(FILE *stream, gpnode_p root)
 
     while (root != NULL){
         INDENT; fprintf(stream, "<%s>", gpn_get_tag(root));
-        
+
         if (gpn_child(root) == NULL) {
             if (gpn_get_content(root) != NULL)
                 fprintf(stream, "%s", gpn_get_content(root));

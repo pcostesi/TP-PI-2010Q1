@@ -54,7 +54,7 @@
 
 /* Static function prototypes */
 static profession_t *  new_profession_from_gpnode(gpnode_p);
-static enemy_t *        new_enemy_from_gpnode(gpnode_p, int);
+static enemy_t *        new_enemy_from_gpnode(game_t *, gpnode_p);
 static gate_t *         new_gate_from_gpnode(gpnode_p);
 static room_t *         new_room_from_gpnode(gpnode_p);
 static unsigned int    extract_gates(room_t *, gpnode_p);
@@ -64,6 +64,9 @@ static unsigned int    extract_important_points(game_t *, gpnode_p);
 static unsigned int    extract_enemies(game_t *, gpnode_p);
 static unsigned int    extract_rooms(game_t *, gpnode_p);
 static character_t *   load_character(gpnode_p node);
+
+static void alloc_dmg_table(game_t *, int);
+static void free_dmg_table(game_t *);
 
 static void             load_enemies(room_t *, gpnode_p);
 static void             load_room(game_t *, gpnode_p);
@@ -147,7 +150,7 @@ static void
 load_rooms(game_t * g, gpnode_p rooms)
 {
     gpnode_p room;
-    
+
     for (room = gpn_child(rooms); room != NULL; room = gpn_next(room))
         load_room(g, room);
 }
@@ -157,7 +160,7 @@ static character_t *
 load_character(gpnode_p node)
 {
     character_t * c = NULL;
-    if (node != NULL && gpn_cmp_tag(node, "Character")){        
+    if (node != NULL && gpn_cmp_tag(node, "Character")){
         c = malloc(sizeof(character_t));
         for (node = gpn_child(node); node != NULL; node = gpn_next(node)){
             if (gpn_cmp_tag(node, "Name")){
@@ -182,7 +185,7 @@ save_character(logbook_t * log)
     character = gpn_alloc();
     node = new_gpn_child(character);
     gpn_set_tag(character, dupstr("Character"));
-    
+
     gpn_set_tag(node, dupstr("Name"));
     gpn_set_content(node, dupstr(log->player->name));
 
@@ -218,14 +221,14 @@ save_rooms(game_t * g)
         node = new_gpn_child(room);
         gpn_set_tag(node, dupstr("Visited"));
         gpn_set_content(node, int2str(g->rooms[iter_rooms]->visited));
-        
+
         enemies = new_gpn_child(room);
         gpn_set_tag(enemies, dupstr("Enemies"));
-        
+
         quantity = new_gpn_child(enemies);
         gpn_set_tag(quantity, dupstr("Quantity"));
         gpn_set_content(quantity, int2str(g->rooms[iter_rooms]->enemies_size));
-        
+
         for (iter_enemies = 0; iter_enemies < \
                 g->rooms[iter_rooms]->enemies_size; iter_enemies++){
 
@@ -234,7 +237,7 @@ save_rooms(game_t * g)
             gpn_set_content(enemy, \
                     int2str(g->rooms[iter_rooms]->enemy_ids[iter_enemies]));
         }
-        
+
     }
     return rooms;
 }
@@ -317,18 +320,16 @@ new_profession_from_gpnode(gpnode_p p)
 }
 
 static enemy_t *
-new_enemy_from_gpnode(gpnode_p p, int prof)
+new_enemy_from_gpnode(game_t * game, gpnode_p p)
 {
     gpnode_p node;
     enemy_t * enemy;
+    int n;
 
     if (p == NULL) return NULL;
 
     enemy = malloc(sizeof(enemy_t));
 
-    enemy->maxDP = calloc(prof, sizeof(int));
-    enemy->minDP = calloc(prof, sizeof(int));
-    enemy->prof = prof;
     for (node = gpn_child(p); node != NULL; node = gpn_next(node)){
         if (gpn_cmp_tag(node, "ID")){
             enemy->ID = atoi(gpn_get_content(node));
@@ -339,11 +340,16 @@ new_enemy_from_gpnode(gpnode_p p, int prof)
         } else if (gpn_cmp_tag(node, "MaxHP")){
             enemy->maxHP = atoi(gpn_get_content(node));
         } else if (gpn_ncmp_tag(node, "MinDP-", 6)){
-            enemy->minDP[atoi(strrchr(gpn_get_tag(node), '-') + 1)] = \
-                    atoi(gpn_get_content(node));
+            if ((n = atoi(strrchr(gpn_get_tag(node), '-') + 1)) < \
+                    game->professions_size && enemy->ID < game->enemies_size){
+                game->dmg_table[enemy->ID][n][0] = atoi(gpn_get_content(node));
+            }
         } else if (gpn_ncmp_tag(node, "MaxDP-", 6)){
-            enemy->maxDP[atoi(strrchr(gpn_get_tag(node), '-') + 1)] = \
-                    atoi(gpn_get_content(node));
+            if ((n = atoi(strrchr(gpn_get_tag(node), '-') + 1)) < \
+                    game->professions_size && enemy->ID < game->enemies_size){
+                game->dmg_table[enemy->ID][n][1] = atoi(gpn_get_content(node));
+            }
+
         }
     }
     return enemy;
@@ -497,27 +503,62 @@ extract_important_points(game_t * game, gpnode_p root)
     return exitval;
 }
 
+static void
+alloc_dmg_table(game_t * game, int enem_size)
+{
+    int itr;
+    game->dmg_table = calloc(enem_size, sizeof(int *));
+    for (enem_size-- ;enem_size >= 0; enem_size--){
+        itr = game->professions_size;
+        game->dmg_table[enem_size] = \
+            calloc(game->professions_size, sizeof(int *));
+        for (itr--; itr >= 0; itr--){
+            game->dmg_table[enem_size][itr] = \
+                calloc(2, sizeof(int));
+        }
+    }
+}
+
+static void
+free_dmg_table(game_t * game)
+{
+    int itr, itr2;
+    for (itr = 0; itr < game->enemies_size; itr++){
+        for (itr2 = 0; itr2 < game->professions_size; itr2++){
+            free(game->dmg_table[itr][itr2]);
+        }
+        free(game->dmg_table[itr]);
+    }
+    free(game->dmg_table);
+
+}
+
 static unsigned int
 extract_enemies(game_t * game, gpnode_p root)
 {
     int exitval = 0;
+    gpnode_p node;
     enemy_t ** enemies = NULL;
     enemy_t * enemy;
     int enem_size = 0;
     if (gpn_cmp_tag(root, "Enemigos")){
-        for (root = gpn_child(root); root != NULL; root = gpn_next(root)){
+        for (node = gpn_child(root); node != NULL; node = gpn_next(node)){
             if (enemies == NULL){
-                if (gpn_cmp_tag(root, "Cantidad")){
-                    enem_size = atoi(gpn_get_content(root));
+                if (gpn_cmp_tag(node, "Cantidad")){
+                    enem_size = atoi(gpn_get_content(node));
                     enemies = calloc(enem_size, sizeof(enemy_t *));
+                    alloc_dmg_table(game, enem_size);
                 }
-            } else if (gpn_cmp_tag(root, "Enemigo")){
-                enemy = new_enemy_from_gpnode(root, game->professions_size);
-                if (enemy != NULL && enemy->ID < enem_size){
-                    enemies[enemy->ID] = enemy;
-                } else {
-                    exitval = 1;
-                    free(enemy);
+            }
+        }
+
+        enem_size = 0;
+
+        for (node = gpn_child(root); node != NULL; node = gpn_next(node)){
+            if (gpn_cmp_tag(node, "Enemigo")){
+                enemy = new_enemy_from_gpnode(game, node);
+                if (enemy != NULL){
+                    enemies[enem_size++] = enemy;
                 }
             }
         }
@@ -658,6 +699,7 @@ load_game(const char *filename)
 void
 free_game(game_t * game)
 {
+    free_dmg_table(game);
     free_professions(game);
     free_enemies(game);
     free_rooms(game);
@@ -669,7 +711,7 @@ free_professions(game_t * game)
 {
     int itr;
     profession_t * profession = NULL;
-    
+
     for (itr = 0; itr < game->professions_size; itr++){
         profession = game->professions[itr];
         if (profession != NULL){
@@ -686,13 +728,11 @@ free_enemies(game_t * game)
 {
     int itr;
     enemy_t * enemy = NULL;
-    
+
     for (itr = 0; itr < game->enemies_size; itr++){
         enemy = game->enemies[itr];
         if (enemy != NULL){
             free(enemy->name);
-            free(enemy->minDP);
-            free(enemy->maxDP);
             free(enemy);
         }
     }
@@ -706,7 +746,7 @@ free_rooms(game_t * game)
     int itr, itr2;
     room_t * room = NULL;
     gate_t * gate = NULL;
-    
+
     for (itr = 0; itr < game->rooms_size; itr++){
         room = game->rooms[itr];
         if (room != NULL){
@@ -753,12 +793,12 @@ load_state(const char * filename, logbook_t * logbook)
         logbook->seed = atoi(gpn_get_content(seed));
         logbook->player = load_character(character);
         load_rooms(g, rooms);
-        
+
     } else {
         g = NULL;
     }
     gpn_free(root);
-    return g; 
+    return g;
 
 }
 
@@ -771,24 +811,24 @@ save_state(game_t * g, logbook_t * log, const char * filename)
     /* Set up the root node */
     root = gpn_alloc();
     gpn_set_tag(root, dupstr("State"));
-    
+
     character = save_character(log);
     gpn_link_as_child(root, character);
-        
+
     file = new_gpn_child(root);
     gpn_set_tag(file, dupstr("File"));
     gpn_set_content(file, dupstr(log->filename));
-    
+
     seed = new_gpn_child(root);
     gpn_set_tag(seed, dupstr("Seed"));
     gpn_set_content(seed, int2str(log->seed));
 
     rooms = save_rooms(g);
     gpn_link_as_child(root, rooms);
-    
+
     fp = fopen(filename, "w");
     gpn_to_file(fp, root);
     fclose(fp);
-    
+
     gpn_free(root);
 }
