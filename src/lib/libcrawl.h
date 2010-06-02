@@ -114,7 +114,6 @@ typedef struct Character{
  */
 
 game_t *        load_game(const char *);
-int             log_to_disk(logbook_t *, const char *);
 void            free_game(game_t *);
 void            free_professions(game_t *);
 void            free_enemies(game_t *);
@@ -122,7 +121,6 @@ void            free_rooms(game_t *);
 int             getEnemyByID(game_t *, int);
 int             getRoomByID(game_t *, int);
 int             getProfessionByID(game_t *, int);
-int             getGateByID(room_t *, int);
 
 
 #endif

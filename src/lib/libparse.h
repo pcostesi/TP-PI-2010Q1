@@ -44,13 +44,6 @@
 /* GPNode -- General Purpose Node for representation of tree-like data. */
 typedef struct GPNode * gpnode_p;
 
-/*
- * String -- Convinience 'Environment Carrier' for str* functions in
- * libparse.
- */
-
-typedef struct String * string_p;
-
 
 /* Public function prototypes */
 

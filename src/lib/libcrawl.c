@@ -41,7 +41,6 @@
  */
 
 #include <stdio.h>
-#include <time.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -52,7 +51,7 @@
 #include "strings.h"
 
 /* Macros and constants */
-#define MATCHES_TYPE(_Type, _Elem, _Id) _Type * _object = (_Type *) _Elem;
+#define MATCHES_TYPE(_Type, _Elem, _Id) _Type * _object = (_Type *) _Elem; \
                                     if (_object != NULL) { \
                                         return _object->ID == _Id; \
                                     } else { return -1; }
@@ -74,15 +73,21 @@ static unsigned int    extract_rooms(game_t *, gpnode_p);
 static void alloc_dmg_table(game_t *, int);
 static void free_dmg_table(game_t *);
 
+static int getXByID(void **, int, int, int (*)(void *, int));
+static int matches_enemy_id(void *, int);
+static int matches_room_id(void *, int);
+static int matches_profession_id(void *, int);
+
+
 /* Static functions */
 
 static int
-getXByID(void **vector, int max, int key, int (*matches_id)(void *))
+getXByID(void **vector, int max, int key, int (*matches_id)(void *, int))
 {
     int itr, res = -1;
     if (vector != NULL){
         for (itr = 0; itr < max && res == -1; itr++){
-            if ((*matches_id)(vector[itr])){
+            if ((*matches_id)(vector[itr], key)){
                 res = itr;
             }
         }
@@ -90,6 +95,24 @@ getXByID(void **vector, int max, int key, int (*matches_id)(void *))
     return res;
 }
 
+
+static int
+matches_enemy_id(void * enemy, int id)
+{
+    MATCHES_TYPE(enemy_t, enemy, id)
+}
+
+static int
+matches_profession_id(void * p, int id)
+{
+    MATCHES_TYPE(profession_t, p, id)
+}
+
+static int
+matches_room_id(void * r, int id)
+{
+    MATCHES_TYPE(room_t, r, id)
+}
 
 static profession_t *
 new_profession_from_gpnode(gpnode_p p)
@@ -515,60 +538,24 @@ free_rooms(game_t * game)
     free(game->rooms);
 }
 
-
-/*
- * I miss inheritance sooooo much :'(
- * I hate writing boilerplate code.
- */
-
-
-int
-matches_enemy_id(enemy_t * enemy, int id)
-{
-    MATCHES_TYPE(enemy_t, enemy, id)
-}
-
-int
-matches_profession_id(profession_t * p, int id)
-{
-    MATCHES_TYPE(profession_t, p, id)
-}
-
-int
-matches_room_id(room_t * r, int id)
-{
-    MATCHES_TYPE(room_t, r, id)
-}
-
-int
-matches_gate_id(gate_t * g, int id)
-{
-    MATCHES_TYPE(gate_t, g, id)
-}
-
 int
 getEnemyByID(game_t * game, int id)
 {
-    return getXByID(game->enemies, game->enemies_size, id, matches_enemy_id);
+    return getXByID((void **)game->enemies, game->enemies_size, id, matches_enemy_id);
 }
 
 int
 getRoomByID(game_t * game, int id)
 {
-    return getXByID(game->rooms, game->rooms_size, id, matches_room_id);
+    return getXByID((void **)game->rooms, game->rooms_size, id, matches_room_id);
 }
 
 int
 getProfessionByID(game_t * game, int id)
 {
-    return getXByID(game->professions, game->professions_size, id, \
-            matches_profession_id_id);
+    return getXByID((void **)game->professions, game->professions_size, id, \
+            matches_profession_id);
 }
 
-int
-getGateByID(room_t * room, int id)
-{
-    return getXByID(room->gates, room->gates_size, id, matches_room_id_id);
-}
 
 #endif

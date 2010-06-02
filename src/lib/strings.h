@@ -38,6 +38,23 @@
 
 #include "libcrawl.h"
 
+/*
+ * String -- Convinience 'Environment Carrier' for str* functions in
+ * libparse.
+ */
+
+
+typedef struct String * string_p;
+
+typedef struct String{
+    char * buffer;
+    size_t buffer_size;
+    size_t last_non_whitespace_idx;
+    size_t char_idx;
+} string_t;
+
+
+
 char *    int2str(int);
 int        nlen(int);
 

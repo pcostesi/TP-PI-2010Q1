@@ -1,5 +1,5 @@
 /*
- *      savestate.h
+ *      state.h
  *
  *      Copyright 2010:
  *          Sebastián Maio <email@goes.here>
@@ -49,11 +49,18 @@
 
 #include "libcrawl.h"
 
+typedef struct logbook_s * logbook;
+
 /*
  *  Public function prototypes
  */
 
-void            save_state(game_t *, logbook_t *, const char *);
-game_t *            load_state(const char *, logbook_t *);
+logbook         logmsg(logbook, const char *);
+void            free_logbook(logbook);
+logbook         Logbook(int, character_t *, char *);
+int             log_to_disk(logbook, const char *);
+
+void            save_state(game_t *, logbook, const char *);
+game_t *            load_state(const char *, logbook);
 
 #endif

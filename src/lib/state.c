@@ -1,5 +1,5 @@
 /*
- *      savestate.c
+ *      state.c
  *
  *      Copyright 2010:
  *          Sebastián Maio <email@goes.here>
@@ -41,12 +41,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 /*
  *  General includes
  */
 
-#include "savestate.h"
+#include "state.h"
 #include "libcrawl.h"
 #include "strings.h"
 #include "libparse.h"
@@ -54,6 +55,21 @@
 /*
  *  Macros and constants
  */
+
+typedef struct LogEntry{
+    time_t              time;
+    const char *        action;
+    struct LogEntry *   next;
+} log_entry_t;
+
+
+typedef struct logbook_s{
+    character_t *   player;
+    log_entry_t *   log;
+    int             seed;
+    char *          filename;
+} logbook_t;
+
 
 /*
  *  Static function prototypes
@@ -64,10 +80,63 @@ static void             load_room(game_t *, gpnode_p);
 static void             load_rooms(game_t *, gpnode_p);
 static character_t *   load_character(gpnode_p node);
 static gpnode_p    save_rooms(game_t *);
-static gpnode_p    save_character(logbook_t *);
+static gpnode_p    save_character(logbook);
+static gpnode_p    log_to_node(logbook);
+
+
 /*
  *  Static functions
  */
+
+
+static gpnode_p
+log_to_node(logbook book)
+{
+    gpnode_p root;
+    gpnode_p node;
+    gpnode_p time_node;
+    gpnode_p action_node;
+    log_entry_t * entry;
+    int exitval = 0;
+    char timestring[21];
+
+    root = new_gpn_child(NULL);
+    if (root == NULL) return NULL;
+    gpn_set_tag(root, dupstr("Log"));
+
+    node = new_gpn_child(root);
+    gpn_set_tag(node ,dupstr("Seed"));
+    gpn_set_content(node, int2str(book->seed));
+
+    if (book->filename != NULL){
+        node = new_gpn_child(root);
+        gpn_set_tag(node, dupstr("GameFile"));
+        gpn_set_content(node, dupstr(book->filename));
+    }
+
+    if (book->player != NULL){
+        node = save_character(book);
+        gpn_link_as_child(root, node);
+    }
+
+    for (entry = book->log; entry != NULL && exitval == 0;
+            entry = entry->next){
+        node = new_gpn_child(root);
+        gpn_set_tag(node, dupstr("Entry"));
+
+        time_node = new_gpn_child(node);
+        gpn_set_tag(time_node, dupstr("Time"));
+        strftime(timestring, 20, "%d/%m/%Y %H:%M:%S", gmtime(&entry->time));
+        gpn_set_content(time_node, dupstr(timestring));
+
+        action_node = new_gpn_child(node);
+        gpn_set_tag(action_node, dupstr("Action"));
+        gpn_set_content(action_node, dupstr(entry->action));
+    }
+    return root;
+}
+
+
 static void
 load_enemies(room_t * room, gpnode_p node)
 {
@@ -275,5 +344,67 @@ save_state(game_t * g, logbook_t * log, const char * filename)
 
     gpn_free(root);
 }
+
+
+logbook
+logmsg(logbook book, const char * action)
+{
+    log_entry_t * new_entry;
+    if (book == NULL){
+        book = Logbook(-1, NULL, NULL);
+    }
+
+    new_entry = malloc(sizeof(log_entry_t));
+    new_entry->action = action;
+    time(&new_entry->time);
+    new_entry->next = book->log;
+    book->log = new_entry;
+    return book;
+}
+
+void
+free_logbook(logbook book)
+{
+    log_entry_t * entry, * aux;
+    for (entry = book->log; entry != NULL;){
+        aux = entry;
+        entry = entry->next;
+        free(aux);
+    }
+    free(book);
+
+}
+
+
+int
+log_to_disk(logbook book, const char * filename)
+{
+    FILE * fp;
+    gpnode_p root;
+    int exitval = 0;
+
+    root = log_to_node(book);
+    if (root != NULL){
+        fp = fopen(filename, "w");
+        gpn_to_file(fp, root);
+        fclose(fp);
+        gpn_free(root);
+    } else
+        exitval = 1;
+    return exitval;
+}
+
+
+logbook
+Logbook(int seed, character_t * character, char * filename)
+{
+    logbook book = malloc(sizeof(logbook_t));
+    if (book == NULL) return NULL;
+    book->log = NULL;
+    book->seed = seed;
+    book->filename = filename;
+    return book;
+}
+
 
 #endif

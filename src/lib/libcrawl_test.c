@@ -48,37 +48,22 @@
  */
 
 #include "libcrawl.h"
-
-/*
- *  Macros and constants
- */
-
-/*
- *  Static function prototypes
- */
-
-/*
- *  Public function prototypes
- */
+#include "state.h"
 
 int
 main(int argc, char** argv)
 {
-    logbook_t * logbook;
+    logbook book;
     character_t walter;
     game_t * g;
     game_t * game = load_game("test.xml");
     printf("Game is %p\n", (void *) game);
-    
-    logbook = logmsg(NULL, "Test");
-    logbook->seed = 14;
-    logbook->filename = "test.xml";
-    logbook = logmsg(logbook, "Test2");
-    logbook = logmsg(logbook, "Test3");
-    logbook = logmsg(logbook, "Test4");
-    logbook = logmsg(logbook, "Test5");
-
-    logbook->player = &walter;
+    book = Logbook(14, &walter, "log.xml");
+    book = logmsg(book, "Test");
+    book = logmsg(book, "Test2");
+    book = logmsg(book, "Test3");
+    book = logmsg(book, "Test4");
+    book = logmsg(book, "Test5");
 
     walter.name = "Walter";
     walter.HP = 42;
@@ -94,8 +79,8 @@ main(int argc, char** argv)
                 "\tRooms in game:\t\t%d\n",
                 game->StartRoomID, game->ExitRoomID, game->professions_size,
                             game->enemies_size, game->rooms_size);
-            save_state(game, logbook, "savestate.xml");
-            g = load_state("savestate.xml", logbook);
+            save_state(game, book, "state.xml");
+            g = load_state("state.xml", book);
             printf( "Data about SAVED game:\n"
                 "You enter through %d and exit through %d\n"
                 "\tProfessions:\t\t%d\n"
@@ -106,11 +91,9 @@ main(int argc, char** argv)
             free_game(g);
             free_game(game);
     }
-    
-    log_to_disk(logbook, "log.xml");
-    free(logbook->player->name);
-    free(logbook->player);
-    free_logbook(logbook);
+
+    log_to_disk(book, "log.xml");
+    free_logbook(book);
 
     return EXIT_SUCCESS;
 }
