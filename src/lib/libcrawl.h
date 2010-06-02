@@ -47,12 +47,6 @@
 #include <time.h>
 
 /*
- *  General includes
- */
-
-#include "libparse.h"
-
-/*
  *  Macros and constants
  */
 
@@ -71,6 +65,8 @@ typedef struct Enemy{
     char *  name;
     int     minHP;
     int     maxHP;
+    int *   maxDP;
+    int *   minDP;
 } enemy_t;
 
 
@@ -113,34 +109,20 @@ typedef struct Character{
 } character_t;
 
 
-
-typedef struct LogEntry{
-    time_t              time;
-    const char *        action;
-    struct LogEntry *   next;
-} log_entry_t;
-
-
-typedef struct{
-    character_t *   player;
-    log_entry_t *   log;
-    int             seed;
-    char *          filename;
-} logbook_t;
-
 /*
  *  Public function prototypes
  */
 
-logbook_t * logmsg(logbook_t *, const char *);
 game_t *        load_game(const char *);
 int             log_to_disk(logbook_t *, const char *);
 void            free_game(game_t *);
 void            free_professions(game_t *);
 void            free_enemies(game_t *);
 void            free_rooms(game_t *);
-void            free_logbook(logbook_t *);
-void            save_state(game_t *, logbook_t *, const char *);
-game_t *            load_state(const char *, logbook_t *);
+int             getEnemyByID(game_t *, int);
+int             getRoomByID(game_t *, int);
+int             getProfessionByID(game_t *, int);
+int             getGateByID(room_t *, int);
+
 
 #endif

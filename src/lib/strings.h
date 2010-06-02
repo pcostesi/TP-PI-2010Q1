@@ -1,5 +1,5 @@
 /*
- *      libparse.h
+ *      strings.h
  *
  *      Copyright 2010:
  *          Sebastián Maio <email@goes.here>
@@ -33,43 +33,20 @@
  *      OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define LIBPARSE 0.1
+#ifndef __LIB_STRINGS
+#define __LIB_STRINGS 1
 
-#ifndef __LIB_PARSE
-#define __LIB_PARSE 1
+#include "libcrawl.h"
 
-#include <stdio.h>
+char *    int2str(int);
+int        nlen(int);
 
-
-/* GPNode -- General Purpose Node for representation of tree-like data. */
-typedef struct GPNode * gpnode_p;
-
-/*
- * String -- Convinience 'Environment Carrier' for str* functions in
- * libparse.
- */
-
-typedef struct String * string_p;
-
-
-/* Public function prototypes */
-
-int gpn_to_file(FILE *, gpnode_p);
-int gpn_cmp_tag(gpnode_p, const char *);
-int gpn_ncmp_tag(gpnode_p, const char *, int);
-void gpn_init(gpnode_p);
-void gpn_free(gpnode_p);
-gpnode_p gpn_alloc(void);
-gpnode_p parse(FILE *, int *, int *);
-gpnode_p new_gpn_child(gpnode_p);
-gpnode_p gpn_next(gpnode_p);
-gpnode_p gpn_prev(gpnode_p);
-gpnode_p gpn_parent(gpnode_p);
-gpnode_p gpn_child(gpnode_p);
-void gpn_link_as_child(gpnode_p, gpnode_p);
-void gpn_set_tag(gpnode_p, char *);
-void gpn_set_content(gpnode_p, char *);
-char * gpn_get_tag(gpnode_p);
-char * gpn_get_content(gpnode_p);
+void strinit(string_p);
+string_p strnew(void);
+int strappend(char, string_p);
+char * strtrm(string_p);
+char * strpop(string_p);
+void strfree(string_p);
+char * dupstr(const char *);
 
 #endif

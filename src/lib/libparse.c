@@ -33,7 +33,7 @@
  *      OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
+#ifndef LIBPARSE
 #define LIBPARSE 0.1
 
 /*
@@ -50,18 +50,10 @@
  */
 
 #include "libparse.h"
+#include "strings.h"
 
 /* Macros and constants */
 
-#define BLOCKSIZE 32
-
-
-typedef struct String{
-    char * buffer;
-    size_t buffer_size;
-    size_t last_non_whitespace_idx;
-    size_t char_idx;
-} string_t;
 
 typedef struct GPNode{
     gpnode_p next, prev;
@@ -72,135 +64,6 @@ typedef struct GPNode{
 
 
 /* Public functions */
-
-char *
-dupstr(const char * string)
-{
-    char * new = malloc(strlen(string) + 1);
-    if (new != NULL) strcpy(new, string);
-    return new;
-}
-
-
-/**
- * strinit -- Context initializer for String Utilities.
- *
- * This utility function should be called if you're using the stack to
- * correctly set up the structure (hereon called 'environment carrier').
- *
- */
-void
-strinit(string_p str)
-{
-    if (str != NULL){
-        str->buffer = NULL;
-        str->buffer_size = 0;
-        str->char_idx = 0;
-        str->last_non_whitespace_idx = 0;
-    }
-
-}
-
-/**
- * strfree -- frees any heap-alloc'd Environment Carrier and its buffer.
- */
-void
-strfree(string_p s)
-{
-    if (s != NULL)
-        free(s->buffer);
-    free(s);
-}
-
-/**
- * @brief strnew -- heap-allocate a new String Environment Carrier.
- * @return New String Environment Carrier.
- * This function implicitly calls strinit, so you don't have to call it.
- */
-string_p
-strnew(void)
-{
-    string_p newstring = malloc(sizeof(string_t));
-    strinit(newstring);
-    return newstring;
-}
-
-/**
- * strappend -- push a new character into the buffer.
- *
- * Pushes any non-zero character and echoes. If anything goes wrong
- * (like out-of-memory errors) it returns 0. KEEP IN MIND THAT IF YOU
- * PUSH 0 YOU WILL GET 0.
- */
-int
-strappend(char c, string_p s)
-{
-    char * tmp;
-    if (s != NULL && c != 0){
-        /* Check the buffer size. We add 2 to the last_char size
-         * because we need to push a char and add a trailing zero.
-         * (for the sake of safety). */
-        if (s->buffer == NULL){
-            s->buffer = malloc(BLOCKSIZE);
-            if (s->buffer == NULL) return 0;
-            s->buffer_size = BLOCKSIZE;
-            s->last_non_whitespace_idx = 0;
-            s->char_idx = 0;
-        } else if (s->buffer_size < s->char_idx + 2){
-            tmp = realloc(s->buffer, s->buffer_size + BLOCKSIZE);
-            if (tmp == NULL) return 0;
-            s->buffer = tmp;
-            s->buffer_size += BLOCKSIZE;
-        }
-
-        /* Set the last non-whitespace char */
-        if (!isspace(c))
-            s->last_non_whitespace_idx = s->char_idx + 1;
-        /* Do the actual push into the string and null-terminate it */
-        s->buffer[s->char_idx++] = c;
-        s->buffer[s->char_idx] = 0;
-    }
-    return c;
-}
-
-char *
-strtrm(string_p s)
-{
-    char * exitval = NULL;
-    if (s != NULL && s->buffer != NULL && \
-            s->buffer_size >= s->last_non_whitespace_idx){
-        /* Trim buffer and make room to add a trailing zero (sentinel).
-         * Since array indices start at zero but sizes start at one, we
-         * need to add 1 to the last_non_whitespace_idx. */
-        s->buffer = realloc(s->buffer, s->last_non_whitespace_idx + 1);
-        s->buffer[s->last_non_whitespace_idx] = 0;
-        s->char_idx = s->last_non_whitespace_idx;
-        s->buffer_size = s->last_non_whitespace_idx + 1;
-        exitval = s->buffer;
-    }
-    return exitval;
-}
-
-
-/**
- * strpop -- detaches a null-terminated, trimmed string and resets the
- * Environment Carrier.
- *
- * It's your sole responsibility to clean up the detached string.
- */
-char *
-strpop(string_p s)
-{
-    char * exitval = NULL;
-    if (s != NULL){
-        exitval = strtrm(s);
-        s->buffer = NULL;
-        s->buffer_size = 0;
-        s->last_non_whitespace_idx = 0;
-        s->char_idx = 0;
-    }
-    return exitval;
-}
 
 
 void
@@ -504,3 +367,5 @@ gpn_to_file(FILE *stream, gpnode_p root)
     #undef INDENT
     return parsed;
 }
+
+#endif
