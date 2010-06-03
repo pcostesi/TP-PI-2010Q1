@@ -75,6 +75,7 @@ main(int argcount, char ** vector_of_strings)
                 printf("You have succesfully escaped the dungeon, congratulations!!\n");
         free(player->name);
         free(player);
+        free_game(actualGame);
 
     return EXIT_SUCCESS;
 }

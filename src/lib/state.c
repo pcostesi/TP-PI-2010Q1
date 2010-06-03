@@ -171,10 +171,8 @@ load_room(game_t * g, gpnode_p room)
             else if (gpn_cmp_tag(node, "Enemies"))
                 enemies = node;
         }
-        if (id < g->rooms_size){
-            g->rooms[id]->visited = visited;
-            load_enemies(g->rooms[id], enemies);
-        }
+        getRoomByID(g, id)->visited = visited;
+        load_enemies(getRoomByID(g, id), enemies);
     }
 }
 
@@ -182,7 +180,6 @@ static void
 load_rooms(game_t * g, gpnode_p rooms)
 {
     gpnode_p room;
-
     for (room = gpn_child(rooms); room != NULL; room = gpn_next(room))
         load_room(g, room);
 }
@@ -210,7 +207,7 @@ load_character(gpnode_p node)
 }
 
 static gpnode_p
-save_character(logbook_t * log)
+save_character(logbook book)
 {
     gpnode_p node, character;
 
@@ -219,20 +216,19 @@ save_character(logbook_t * log)
     gpn_set_tag(character, dupstr("Character"));
 
     gpn_set_tag(node, dupstr("Name"));
-    gpn_set_content(node, dupstr(log->player->name));
+    gpn_set_content(node, dupstr(book->player->name));
 
     node = new_gpn_child(character);
     gpn_set_tag(node, dupstr("HP"));
-    gpn_set_content(node, int2str(log->player->HP));
+    gpn_set_content(node, int2str(book->player->HP));
 
     node = new_gpn_child(character);
     gpn_set_tag(node, dupstr("RoomID"));
-    gpn_set_content(node, int2str(log->player->roomID));
+    gpn_set_content(node, int2str(book->player->roomID));
 
     node = new_gpn_child(character);
     gpn_set_tag(node, dupstr("ProfessionID"));
-    gpn_set_content(node, int2str(log->player->professionID));
-
+    gpn_set_content(node, int2str(book->player->professionID));
     return character;
 }
 
@@ -280,7 +276,7 @@ save_rooms(game_t * g)
  */
 
 game_t *
-load_state(const char * filename, logbook_t * logbook)
+load_state(const char * filename, logbook book)
 {
     game_t * g = NULL;
     gpnode_p node, root, character, seed, filenode = NULL, rooms;
@@ -302,8 +298,8 @@ load_state(const char * filename, logbook_t * logbook)
             }
         }
         g = load_game(gpn_get_content(filenode));
-        logbook->seed = atoi(gpn_get_content(seed));
-        logbook->player = load_character(character);
+        book->seed = atoi(gpn_get_content(seed));
+        book->player = load_character(character);
         load_rooms(g, rooms);
 
     } else {
@@ -315,7 +311,7 @@ load_state(const char * filename, logbook_t * logbook)
 }
 
 void
-save_state(game_t * g, logbook_t * log, const char * filename)
+save_state(game_t * g, logbook log, const char * filename)
 {
     gpnode_p root, seed, rooms, file, character;
     FILE *fp;
@@ -350,15 +346,13 @@ logbook
 logmsg(logbook book, const char * action)
 {
     log_entry_t * new_entry;
-    if (book == NULL){
-        book = Logbook(-1, NULL, NULL);
+    if (book != NULL){
+        new_entry = malloc(sizeof(log_entry_t));
+        new_entry->action = action;
+        time(&new_entry->time);
+        new_entry->next = book->log;
+        book->log = new_entry;
     }
-
-    new_entry = malloc(sizeof(log_entry_t));
-    new_entry->action = action;
-    time(&new_entry->time);
-    new_entry->next = book->log;
-    book->log = new_entry;
     return book;
 }
 
@@ -372,7 +366,6 @@ free_logbook(logbook book)
         free(aux);
     }
     free(book);
-
 }
 
 
@@ -403,8 +396,20 @@ Logbook(int seed, character_t * character, char * filename)
     book->log = NULL;
     book->seed = seed;
     book->filename = filename;
+    book->player = character;
     return book;
 }
 
+void
+setCharacter(logbook book, character_t * player)
+{
+    book->player = player;
+}
+
+character_t *
+getCharacter(logbook book)
+{
+    return book->player;
+}
 
 #endif

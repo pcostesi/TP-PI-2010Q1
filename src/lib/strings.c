@@ -56,6 +56,14 @@
  */
 #define BLOCKSIZE 32
 
+
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 int
 nlen(int in)
 {
@@ -68,6 +76,14 @@ nlen(int in)
     return size;
 }
 
+
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 char *
 int2str(int in)
 {
@@ -90,7 +106,10 @@ int2str(int in)
 
 /**
  * @brief Simple implementation of strdup.
+ *
  * @param string Pointer to char array.
+ *
+ * @return array of chars, an identical copy of the string.
  *
  * As most implementations of the stdlib include this function as "strdup",
  * I've chosen to name it dupstr. The GNU Standard Library includes it.
@@ -106,7 +125,9 @@ dupstr(const char * string)
 
 
 /**
- * strinit -- Context initializer for String Utilities.
+ * @brief Context initializer for String Utilities.
+ *
+ * @param str Environment
  *
  * This utility function should be called if you're using the stack to
  * correctly set up the structure (hereon called 'environment carrier').
@@ -125,7 +146,11 @@ strinit(string_p str)
 }
 
 /**
- * strfree -- frees any heap-alloc'd Environment Carrier and its buffer.
+ * @brief frees any heap-alloc'd Environment Carrier and its buffer.
+ *
+ * @param s String Environment
+ *
+ * Frees the Environment Carrier and its contents.
  */
 void
 strfree(string_p s)
@@ -136,8 +161,10 @@ strfree(string_p s)
 }
 
 /**
- * @brief strnew -- heap-allocate a new String Environment Carrier.
+ * @brief heap-allocate a new String Environment Carrier.
+ *
  * @return New String Environment Carrier.
+ *
  * This function implicitly calls strinit, so you don't have to call it.
  */
 string_p
@@ -149,7 +176,12 @@ strnew(void)
 }
 
 /**
- * strappend -- push a new character into the buffer.
+ * @brief strappend -- push a new character into the buffer.
+ *
+ * @param c Input character
+ * @param s String Environment
+ *
+ * @return Appended character, or 0 in case of error.
  *
  * Pushes any non-zero character and echoes. If anything goes wrong
  * (like out-of-memory errors) it returns 0. KEEP IN MIND THAT IF YOU
@@ -186,6 +218,14 @@ strappend(char c, string_p s)
     return c;
 }
 
+
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 char *
 strtrm(string_p s)
 {
@@ -206,8 +246,12 @@ strtrm(string_p s)
 
 
 /**
- * strpop -- detaches a null-terminated, trimmed string and resets the
- * Environment Carrier.
+ * @brief strpop -- detaches a null-terminated, trimmed string and
+ * resets the Environment Carrier.
+ *
+ * @param s String Environment
+ *
+ * @return Pointer to array of chars.
  *
  * It's your sole responsibility to clean up the detached string.
  */

@@ -43,6 +43,7 @@
  * libparse.
  */
 
+#define CLEAN_STRING_T {NULL, 0, 0, 0}
 
 typedef struct String * string_p;
 

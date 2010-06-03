@@ -83,7 +83,6 @@ gpn_alloc(void)
 {
     gpnode_p node;
     node = malloc(sizeof(gpnode_t));
-    if (node == NULL) return NULL;
     gpn_init(node);
     return node;
 }
@@ -123,7 +122,8 @@ gpnode_p
 new_gpn_child(gpnode_p node)
 {
     gpnode_p aux = gpn_alloc();
-    gpn_link_as_child(node, aux);
+    if (node != NULL && aux != NULL)
+        gpn_link_as_child(node, aux);
     return aux;
 }
 
@@ -237,12 +237,12 @@ parse(FILE *stream, int *lp, int *cp)
                         free(strpop(&context));              \
                         return NULL;
 
-    char *endtag;
+    char *endtag = NULL;
     gpnode_p node = NULL;
     gpnode_p root = NULL;
     static enum States {STAG, ETAG, DATA, WHITESPACE } state;
     int input, line = 0, col = 0;
-    string_t context;
+    string_t context = CLEAN_STRING_T;
     strinit(&context);
     state = WHITESPACE;
 
@@ -308,7 +308,9 @@ parse(FILE *stream, int *lp, int *cp)
                     }
                 } else if (state == STAG){
                     node = new_gpn_child(node);
-                    if (root == NULL)
+                    if (node == NULL){
+                        CLEANUP
+                    } else if (root == NULL)
                         root = node;
                     gpn_set_tag(node, strpop(&context));
                 }
