@@ -95,7 +95,6 @@ typedef struct Game{
     int                 professions_size;
     enemy_t **          enemies;
     int                 enemies_size;
-    int ***             dmg_table;
     room_t **           rooms;
     int                 rooms_size;
 } game_t;
@@ -118,9 +117,9 @@ void            free_game(game_t *);
 void            free_professions(game_t *);
 void            free_enemies(game_t *);
 void            free_rooms(game_t *);
-int             getEnemyByID(game_t *, int);
-int             getRoomByID(game_t *, int);
-int             getProfessionByID(game_t *, int);
-
+enemy_t *             getEnemyByID(game_t *, int);
+room_t *             getRoomByID(game_t *, int);
+profession_t *             getProfessionByID(game_t *, int);
+int             getProfessionIndexByID(game_t *, int);
 
 #endif

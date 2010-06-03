@@ -34,8 +34,6 @@
  */
 
 
-#define PROJECT_NAME_VERSION 0.1
-
 /*
  *  System includes
  */

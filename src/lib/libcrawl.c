@@ -69,10 +69,6 @@ static unsigned int    extract_important_points(game_t *, gpnode_p);
 static unsigned int    extract_enemies(game_t *, gpnode_p);
 static unsigned int    extract_rooms(game_t *, gpnode_p);
 
-
-static void alloc_dmg_table(game_t *, int);
-static void free_dmg_table(game_t *);
-
 static int getXByID(void **, int, int, int (*)(void *, int));
 static int matches_enemy_id(void *, int);
 static int matches_room_id(void *, int);
@@ -84,15 +80,15 @@ static int matches_profession_id(void *, int);
 static int
 getXByID(void **vector, int max, int key, int (*matches_id)(void *, int))
 {
-    int itr, res = -1;
+    int itr, idx = -1;
     if (vector != NULL){
-        for (itr = 0; itr < max && res == -1; itr++){
+        for (itr = 0; itr < max && idx == -1; itr++){
             if ((*matches_id)(vector[itr], key)){
-                res = itr;
+                idx = itr;
             }
         }
     }
-    return res;
+    return idx;
 }
 
 
@@ -146,10 +142,16 @@ new_enemy_from_gpnode(game_t * game, gpnode_p p)
     gpnode_p node;
     enemy_t * enemy;
     int n;
+    int * maxDP, * minDP;
 
     if (p == NULL) return NULL;
 
     enemy = malloc(sizeof(enemy_t));
+    maxDP = calloc(game->professions_size, sizeof(int));
+    minDP = calloc(game->professions_size, sizeof(int));
+
+    enemy->maxDP = maxDP;
+    enemy->minDP = minDP;
 
     for (node = gpn_child(p); node != NULL; node = gpn_next(node)){
         if (gpn_cmp_tag(node, "ID")){
@@ -161,16 +163,11 @@ new_enemy_from_gpnode(game_t * game, gpnode_p p)
         } else if (gpn_cmp_tag(node, "MaxHP")){
             enemy->maxHP = atoi(gpn_get_content(node));
         } else if (gpn_ncmp_tag(node, "MinDP-", 6)){
-            if ((n = atoi(strrchr(gpn_get_tag(node), '-') + 1)) < \
-                    game->professions_size && enemy->ID < game->enemies_size){
-                game->dmg_table[enemy->ID][n][0] = atoi(gpn_get_content(node));
-            }
+            n = atoi(gpn_get_tag(node) + 5);
+            minDP[getProfessionIndexByID(game, n)] = atoi(gpn_get_content(node));
         } else if (gpn_ncmp_tag(node, "MaxDP-", 6)){
-            if ((n = atoi(strrchr(gpn_get_tag(node), '-') + 1)) < \
-                    game->professions_size && enemy->ID < game->enemies_size){
-                game->dmg_table[enemy->ID][n][1] = atoi(gpn_get_content(node));
-            }
-
+            n = atoi(gpn_get_tag(node) + 5);
+            maxDP[getProfessionIndexByID(game, n)] = atoi(gpn_get_content(node));
         }
     }
     return enemy;
@@ -324,35 +321,6 @@ extract_important_points(game_t * game, gpnode_p root)
     return exitval;
 }
 
-static void
-alloc_dmg_table(game_t * game, int enem_size)
-{
-    int itr;
-    game->dmg_table = calloc(enem_size, sizeof(int *));
-    for (enem_size-- ;enem_size >= 0; enem_size--){
-        itr = game->professions_size;
-        game->dmg_table[enem_size] = \
-            calloc(game->professions_size, sizeof(int *));
-        for (itr--; itr >= 0; itr--){
-            game->dmg_table[enem_size][itr] = \
-                calloc(2, sizeof(int));
-        }
-    }
-}
-
-static void
-free_dmg_table(game_t * game)
-{
-    int itr, itr2;
-    for (itr = 0; itr < game->enemies_size; itr++){
-        for (itr2 = 0; itr2 < game->professions_size; itr2++){
-            free(game->dmg_table[itr][itr2]);
-        }
-        free(game->dmg_table[itr]);
-    }
-    free(game->dmg_table);
-
-}
 
 static unsigned int
 extract_enemies(game_t * game, gpnode_p root)
@@ -368,7 +336,6 @@ extract_enemies(game_t * game, gpnode_p root)
                 if (gpn_cmp_tag(node, "Cantidad")){
                     enem_size = atoi(gpn_get_content(node));
                     enemies = calloc(enem_size, sizeof(enemy_t *));
-                    alloc_dmg_table(game, enem_size);
                 }
             }
         }
@@ -470,7 +437,6 @@ load_game(const char *filename)
 void
 free_game(game_t * game)
 {
-    free_dmg_table(game);
     free_professions(game);
     free_enemies(game);
     free_rooms(game);
@@ -504,6 +470,8 @@ free_enemies(game_t * game)
         enemy = game->enemies[itr];
         if (enemy != NULL){
             free(enemy->name);
+            free(enemy->minDP);
+            free(enemy->maxDP);
             free(enemy);
         }
     }
@@ -538,23 +506,34 @@ free_rooms(game_t * game)
     free(game->rooms);
 }
 
-int
+enemy_t *
 getEnemyByID(game_t * game, int id)
 {
-    return getXByID((void **)game->enemies, game->enemies_size, id, matches_enemy_id);
+    return (enemy_t *) game->enemies[getXByID((void **)game->enemies, \
+            game->enemies_size, id, matches_enemy_id)];
 }
 
-int
+room_t *
 getRoomByID(game_t * game, int id)
 {
-    return getXByID((void **)game->rooms, game->rooms_size, id, matches_room_id);
+    return (room_t *) game->rooms[getXByID((void **)game->rooms, \
+            game->rooms_size, id, matches_room_id)];
+}
+
+profession_t *
+getProfessionByID(game_t * game, int id)
+{
+    return (profession_t *) game->professions[getXByID(\
+            (void **)game->professions, \
+            game->professions_size, id, \
+            matches_profession_id)];
 }
 
 int
-getProfessionByID(game_t * game, int id)
+getProfessionIndexByID(game_t * game, int id)
 {
-    return getXByID((void **)game->professions, game->professions_size, id, \
-            matches_profession_id);
+    return getXByID((void **)game->professions, \
+            game->professions_size, id, matches_profession_id);
 }
 
 
