@@ -66,7 +66,7 @@ typedef struct GPNode{
 /* Public functions */
 
 
-void
+gpnode_p
 gpn_init(gpnode_p node){
     if (node != NULL){
         node->next = NULL;
@@ -76,6 +76,7 @@ gpn_init(gpnode_p node){
         node->next = NULL;
         node->child = NULL;
     }
+    return node;
 }
 
 gpnode_p
@@ -83,7 +84,7 @@ gpn_alloc(void)
 {
     gpnode_p node;
     node = malloc(sizeof(gpnode_t));
-    gpn_init(node);
+    node = gpn_init(node);
     return node;
 }
 

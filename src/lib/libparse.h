@@ -50,7 +50,7 @@ typedef struct GPNode * gpnode_p;
 int gpn_to_file(FILE *, gpnode_p);
 int gpn_cmp_tag(gpnode_p, const char *);
 int gpn_ncmp_tag(gpnode_p, const char *, int);
-void gpn_init(gpnode_p);
+gpnode_p gpn_init(gpnode_p);
 void gpn_free(gpnode_p);
 gpnode_p gpn_alloc(void);
 gpnode_p parse(FILE *, int *, int *);

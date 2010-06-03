@@ -150,8 +150,10 @@ game_t *
 load_game(const char *filename)
 {
     FILE *file;
+    int err = 0;
     game_t * game_p = NULL;
-    gpnode_p root, node, importantPoints, professions, enemies, rooms = NULL;
+    gpnode_p root, node, importantPoints = NULL, professions = NULL;
+    gpnode_p enemies = NULL, rooms = NULL;
     root = NULL;
     game_p = malloc(sizeof(game_t));
     file = fopen(filename, "r");
@@ -162,6 +164,7 @@ load_game(const char *filename)
         fclose(file);
         return NULL;
     }
+
     if (gpn_cmp_tag(root, "Juego")){
         for (node = gpn_child(root); node != NULL; node = gpn_next(node)){
             if (gpn_cmp_tag(node, "PuntosImportantes")){
@@ -174,15 +177,23 @@ load_game(const char *filename)
                 rooms = node;
             }
         }
-        extract_important_points(game_p, importantPoints);
-        extract_professions(game_p, professions);
-        extract_enemies(game_p, enemies);
-        extract_rooms(game_p, rooms);
+        if (err != 0)
+            err += extract_important_points(game_p, importantPoints);
+        if (err != 0)
+            err += extract_professions(game_p, professions);
+        if (err != 0)
+            err += extract_enemies(game_p, enemies);
+        if (err != 0)
+            err += extract_rooms(game_p, rooms);
     } else {
-        game_p = NULL;
+        err = 1;
     }
     gpn_free(root);
     fclose(file);
+    if (err != 0){
+        free_game(game_p);
+        game_p = NULL;
+    }
     return game_p;
 }
 
