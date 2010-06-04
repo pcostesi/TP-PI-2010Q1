@@ -105,6 +105,8 @@ typedef struct Character{
     int     professionID;
     int     HP;
     char *  name;
+    int potions;
+    int maxHP;
 } character_t;
 
 
@@ -121,5 +123,6 @@ enemy_t *             getEnemyByID(game_t *, int);
 room_t *             getRoomByID(game_t *, int);
 profession_t *             getProfessionByID(game_t *, int);
 int             getProfessionIndexByID(game_t *, int);
-
+int             getEnemyMinAndMaxDPByProfession(game_t *, enemy_t *, \
+                    profession_t *, int *, int *);
 #endif

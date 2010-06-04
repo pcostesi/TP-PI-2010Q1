@@ -1,5 +1,5 @@
 /*
- *      strings.h
+ *      screen.h
  *
  *      Copyright 2010:
  *          Sebastián Maio <email@goes.here>
@@ -33,33 +33,44 @@
  *      OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __LIB_STRINGS
-#define __LIB_STRINGS 1
-
-#include "libcrawl.h"
+#ifndef __LIB_SCREEN
+#define __LIB_SCREEN 1
 
 /*
- * String -- Convinience 'Environment Carrier' for str* functions in
- * libparse.
+ *  System includes
  */
 
-#define CLEAN_STRING_T {NULL, 0, 0, 0}
+#include <stdio.h>
+#include <stdlib.h>
 
-typedef struct String * string_p;
+/*
+ *  General includes
+ */
 
-typedef struct String string_t;
+/*
+ *  Macros and constants
+ */
+
+typedef struct Screen * screen;
+typedef struct Layer * layer;
+
+#define SCR_DRAW_MARGINS 2
+#define SCR_AUTO_WARP 1
 
 
+/*
+ *  Public function prototypes
+ */
 
-char *    int2str(int);
-int        nlen(int);
+screen initscr(FILE *, size_t, size_t);
+layer newLayer(size_t, size_t, size_t, size_t, char);
 
-void strinit(string_p);
-string_p strnew(void);
-int strappend(char, string_p);
-char * strtrm(string_p);
-char * strpop(string_p);
-void strfree(string_p);
-char * dupstr(const char *);
+layer settext(layer, const char * string, const char * mode);
+layer draw(layer, const char **);
+void update(screen, layer *);
+void absMoveLayer(layer, size_t, size_t);
+
+void endscr(screen);
+void freeLayer(layer);
 
 #endif
