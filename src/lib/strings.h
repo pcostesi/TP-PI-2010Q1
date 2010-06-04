@@ -55,7 +55,6 @@ typedef struct String{
 } string_t;
 
 
-
 char *    int2str(int);
 int        nlen(int);
 

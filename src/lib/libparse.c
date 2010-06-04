@@ -243,7 +243,7 @@ parse(FILE *stream, int *lp, int *cp)
     gpnode_p root = NULL;
     static enum States {STAG, ETAG, DATA, WHITESPACE } state;
     int input, line = 0, col = 0;
-    string_t context = CLEAN_STRING_T;
+    string_t context; // = CLEAN_STRING_T;
     strinit(&context);
     state = WHITESPACE;
 

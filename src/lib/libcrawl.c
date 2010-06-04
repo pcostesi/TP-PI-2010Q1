@@ -421,6 +421,7 @@ extract_rooms(game_t * game, gpnode_p root)
     room_t ** rooms = NULL;
     room_t * room;
     int room_size = 0;
+    int room_itr = 0;
 
     if (gpn_cmp_tag(root, "Laberinto")){
         for(root = gpn_child(root); root != NULL && exitval == 0;
@@ -432,8 +433,8 @@ extract_rooms(game_t * game, gpnode_p root)
                 }
             } else if (gpn_cmp_tag(root, "Habitacion")){
                 room = new_room_from_gpnode(root);
-                if (room != NULL && room->ID < room_size)
-                    rooms[room->ID] = room;
+                if (room != NULL)
+                    rooms[room_itr++] = room;
                 else {
                     exitval = 1;
                     free(room);
@@ -555,13 +556,13 @@ load_game(const char *filename)
                 rooms = node;
             }
         }
-        if (err != 0)
+        if (err == 0)
             err += extract_important_points(game_p, importantPoints);
-        if (err != 0)
+        if (err == 0)
             err += extract_professions(game_p, professions);
-        if (err != 0)
+        if (err == 0)
             err += extract_enemies(game_p, enemies);
-        if (err != 0)
+        if (err == 0)
             err += extract_rooms(game_p, rooms);
     } else {
         err = 1;
