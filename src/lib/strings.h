@@ -47,7 +47,12 @@
 
 typedef struct String * string_p;
 
-typedef struct String string_t;
+typedef struct String{
+    char * buffer;
+    size_t buffer_size;
+    size_t last_non_whitespace_idx;
+    size_t char_idx;
+} string_t;
 
 
 

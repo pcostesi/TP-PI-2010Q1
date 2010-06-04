@@ -56,13 +56,6 @@
  */
 #define BLOCKSIZE 32
 
-struct String{
-    char * buffer;
-    size_t buffer_size;
-    size_t last_non_whitespace_idx;
-    size_t char_idx;
-}
-
 /**
  * @brief
  *
