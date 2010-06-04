@@ -58,7 +58,7 @@
 
 typedef struct LogEntry{
     time_t              time;
-    const char *        action;
+    char *        action;
     struct LogEntry *   next;
 } log_entry_t;
 
@@ -343,7 +343,7 @@ save_state(game_t * g, logbook log, const char * filename)
 
 
 logbook
-logmsg(logbook book, const char * action)
+logmsg(logbook book, char * action)
 {
     log_entry_t * new_entry;
     if (book != NULL){
@@ -362,6 +362,7 @@ free_logbook(logbook book)
     log_entry_t * entry, * aux;
     for (entry = book->log; entry != NULL;){
         aux = entry;
+	free(entry->action);
         entry = entry->next;
         free(aux);
     }

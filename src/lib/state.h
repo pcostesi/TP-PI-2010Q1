@@ -55,7 +55,7 @@ typedef struct logbook_s * logbook;
  *  Public function prototypes
  */
 
-logbook         logmsg(logbook, const char *);
+logbook         logmsg(logbook, char *);
 void            free_logbook(logbook);
 logbook         Logbook(int, character_t *, char *);
 int             log_to_disk(logbook, const char *);
