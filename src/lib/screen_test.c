@@ -62,19 +62,33 @@
 int
 main(int argc, char** argv)
 {
-    screen scr = initscr(stdout, 60, 10);
-    layer l = newLayer(42, 14, 4, 4);
-    const char * m[] = {"Esto es una prueba",
-         "para ver si anda",
+    char g[21];
+    screen scr = initscr(stdout, 60, 12);
+    layer l = newLayer(42, 3, 4, 4);
+    layer l2 = newLayer(20, 3, 3, 3);
+    layer l3 = gaugeWidget("Health", 35);
+    const char * m[] = {
+        "Esto es una prueba",
+        "para ver si anda",
          NULL
         };
     l = draw(l, m);
-    layer layers[] = {l, NULL};
+    l2 = draw(l2, m);
+    
+    layer layers[] = {l, l2, l3, NULL};
+    absMoveLayer(l3, 1, 1);
     update(scr, layers);
     absMoveLayer(l, 2, 2);
+    gaugeWidgetUpdate(l3, 60);
+    setTitle(l, "Layer 1");
+    update(scr, layers);
+    absMoveLayer(l, -2, -2);
+    update(scr, layers);
+    setMode(l, SCR_HIDDEN);
+    setMode(l2, 0);
+    gaugeWidgetUpdate(l3, 20);
     update(scr, layers);
     endscr(scr);
-
     return EXIT_SUCCESS;
 }
 

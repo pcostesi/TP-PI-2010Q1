@@ -55,23 +55,34 @@ typedef struct Screen * screen;
 typedef struct Layer * layer;
 
 #define SCR_DRAW_MARGINS 2
+#define SCR_DRAW_TITLE 8
 #define SCR_AUTO_WARP 1
-
+#define SCR_HIDDEN 4
+#define STD_HEIGHT 25
+#define STD_WIDTH 80
+#define ENV_HEIGHT (getenv("LINES") == NULL ? STD_HEIGHT : atoi(getenv("LINES")))
+#define ENV_WIDTH (getenv("COLUMNS") == NULL ? STD_WIDTH : atoi(getenv("COLUMNS")))
 
 /*
  *  Public function prototypes
  */
 
-screen initscr(FILE *, size_t, size_t);
-layer newLayer(size_t, size_t, size_t, size_t);
 
-void setMargins(layer, int);
-layer settext(layer, const char * s);
+screen initscr(FILE *, size_t, size_t);
+layer newLayer(size_t, size_t, int, int);
+
+void setTitle(layer, const char * c);
+void setMode(layer, int);
 layer draw(layer, const char **);
 void update(screen, layer *);
-void absMoveLayer(layer, size_t, size_t);
+void absMoveLayer(layer, int, int);
+layer setText(layer, int, const char *);
 
 void endscr(screen);
 void freeLayer(layer);
+
+char * gauge(char *, size_t, size_t);
+layer gaugeWidget(const char *, size_t);
+void gaugeWidgetUpdate(layer, size_t);
 
 #endif

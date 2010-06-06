@@ -41,6 +41,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /*
  *  General includes
@@ -52,11 +53,13 @@
  *  Macros and constants
  */
 
+#define MIN(A, B) ((A) < (B) ? (A) : (B))
+#define MAX(A, B) ((A) > (B) ? (A) : (B))
 
 typedef struct Layer{
     char ** matrix;
     size_t x, y;
-    size_t x_offset, y_offset;
+    int x_offset, y_offset;
     int mode;
     char * name;
 } layer_t;
@@ -76,35 +79,95 @@ typedef struct Screen{
 static char ** matrixAlloc(size_t, size_t);
 static void drawLayer(screen scr, layer l);
 static void bufferToStream(screen scr);
+static void drawMargins(screen scr, layer l);
 
 /*
  *  Static functions
  */
 
+static void drawTitle(screen scr, layer l)
+{
+    #define _SET_BUFFER(A) if (itr_x++ >= 0 && itr_x < l->x + 1) \
+                                scr->buffer[itr_y][itr_x] = (A)
+    int itr_x, itr_y;
+    char * t = NULL;
+    int y_bound = MIN(l->y + l->y_offset, scr->y);
+    int x_bound = MIN(l->x + l->x_offset, scr->x);
+
+    /* Draw title */
+    if (l->name != NULL && (itr_y = l->y_offset - 1) >= 0){
+        /* place the cursor over the title, offset 1 the layer = (1; -1)*/
+        itr_x = l->x_offset;
+        /* move the boundary so the title doesn't stick out of the margins */
+        x_bound -= 4; /* because we're adding ')', ' ', '~' and '#' */
+        _SET_BUFFER('(');
+        _SET_BUFFER(' ');
+        for (t = l->name; *t != 0 && itr_x < x_bound; t++)
+            _SET_BUFFER(*t);
+        _SET_BUFFER(' ');
+        _SET_BUFFER(')');
+    }
+    #undef _SET_BUFFER
+}
+
 static void drawMargins(screen scr, layer l)
 {
     int itr_x, itr_y;
-    char c;
+    int y_bound = MIN(l->y + l->y_offset, scr->y);
+    int x_bound = MIN(l->x + l->x_offset, scr->x);
+
+    /* Draw top and down margins */
+    for (itr_y = l->y_offset - 1; itr_y < y_bound + 1; itr_y += l->y + 1){
+        for (itr_x = l->x_offset; itr_x < x_bound; itr_x++){
+            if (itr_x >= 0 && itr_y >= 0){
+                scr->buffer[itr_y][itr_x] = '~';
+            }
+        }
+    }
+
+    /* Draw left and right margins */
+    for (itr_y = l->y_offset; itr_y < y_bound; itr_y++){
+        for (itr_x = l->x_offset - 1; itr_x < x_bound + 1; itr_x += l->x + 1){
+            if (itr_x >= 0 && itr_y >= 0){
+                scr->buffer[itr_y][itr_x] = '|';
+            }
+        }
+    }
+
+    /* Draw corners */
+    for (itr_y = l->y_offset - 1; itr_y < y_bound + 1; itr_y += l->y + 1)
+        for (itr_x = l->x_offset - 1; itr_x < x_bound + 1; itr_x += l->x + 1)
+            if (itr_x >= 0 && itr_y >= 0)
+                scr->buffer[itr_y][itr_x] = '#';
 }
 
 static void drawLayer(screen scr, layer l)
 {
     int itr_x, itr_y;
-    for (itr_y = l->y_offset; \
-         itr_y < scr->y && itr_y < l->y + l->y_offset; \
-         itr_y++){
-        for (itr_x = l->x_offset; \
-             itr_x < scr->x && itr_x < l->x + l->x_offset; \
-             itr_x++){
-            scr->buffer[itr_y][itr_x] = \
-                l->matrix[itr_y - l->y_offset][itr_x - l->x_offset];
+
+    int y_boundary = MIN(l->y + l->y_offset, scr->y);
+    int x_boundary = MIN(l->x + l->x_offset, scr->x);
+    
+    if (!(l->mode & SCR_HIDDEN)){
+        for (itr_y = l->y_offset; itr_y < y_boundary; itr_y++){
+            for (itr_x = l->x_offset; itr_x < x_boundary; itr_x++){
+                if (itr_y >= 0 && itr_x >= 0 && itr_y - l->y_offset >= 0 && itr_x - l->x_offset >= 0)
+                    scr->buffer[itr_y][itr_x] = \
+                        l->matrix[itr_y - l->y_offset][itr_x - l->x_offset];
+            }
         }
+
+        if (l->mode & SCR_DRAW_MARGINS)
+            drawMargins(scr, l);
+        if (l->mode & SCR_DRAW_TITLE)
+            drawTitle(scr, l);
     }
 }
 
 static void bufferToStream(screen scr)
 {
     int itr_x, itr_y;
+    fputc('\n', scr->stream);
     for (itr_y = 0; itr_y < scr->y; itr_y++){
         for (itr_x = 0; itr_x < scr->x; itr_x++){
             fputc(scr->buffer[itr_y][itr_x], scr->stream);
@@ -117,15 +180,13 @@ static void bufferToStream(screen scr)
 static char **
 matrixAlloc(size_t x, size_t y)
 {
-    int itr_y, itr_x;
+    int itr_y;
     char ** matrix;
     matrix = malloc(y * sizeof(char *));
     if (matrix != NULL){
         for (itr_y = 0; itr_y < y; itr_y++){
             matrix[itr_y] = malloc(sizeof(char) * x);
-            for (itr_x = 0; itr_x < x; itr_x++){
-                matrix[itr_y][itr_x] = ' ';
-            }
+            memset(matrix[itr_y], ' ', x);
         }
     }
     return matrix;
@@ -152,7 +213,7 @@ initscr(FILE * stream, size_t x, size_t y)
 }
 
 layer
-newLayer(size_t x, size_t y, size_t x_offset, size_t y_offset)
+newLayer(size_t x, size_t y, int x_offset, int y_offset)
 {
     layer result = malloc(sizeof(layer_t));
     if (result != NULL){
@@ -161,14 +222,14 @@ newLayer(size_t x, size_t y, size_t x_offset, size_t y_offset)
         result->x = x;
         result->x_offset = x_offset;
         result->y_offset = y_offset;
-        result->mode = SCR_AUTO_WARP | SCR_DRAW_MARGINS;
+        result->mode = SCR_AUTO_WARP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE;
         result->name = NULL;
     }
     return result;
 }
 
 void
-absMoveLayer(layer l, size_t x, size_t y)
+absMoveLayer(layer l, int x, int y)
 {
     if (l != NULL){
         l->x_offset = x;
@@ -179,15 +240,20 @@ absMoveLayer(layer l, size_t x, size_t y)
 layer
 draw(layer l, const char ** m)
 {
-    int x, y, itr_x, itr_y;
+    int itr_x, itr_y;
     if (l != NULL){
-        y = l->y;
-        x = l->x;
         for (itr_y = 0; m[itr_y] != NULL && itr_y < l->y; itr_y++){
-            for (itr_x = 0; itr_y < l->x && m[itr_y][itr_x] != 0; itr_x++){
-                l->matrix[itr_y][itr_x] = m[itr_y][itr_x];
-            }
+            setText(l, itr_y, m[itr_y]);
         }
+    }
+    return l;
+}
+
+layer setText(layer l, int i, const char * t)
+{
+    int itr_x;
+    for (itr_x = 0; itr_x < l->x && t[itr_x] != 0; itr_x++){
+        l->matrix[i][itr_x] = t[itr_x];
     }
     return l;
 }
@@ -228,6 +294,17 @@ endscr(screen scr)
     }
 }
 
+
+void setTitle(layer l, const char * c)
+{
+    l->name = c;
+}
+
+void setMode(layer l, int i)
+{
+    l->mode = i; 
+}
+
 void
 freeLayer(layer l)
 {
@@ -237,4 +314,33 @@ freeLayer(layer l)
     }
 }
 
+char *
+gauge(char * s, size_t capacity, size_t percentage)
+{
+    size_t itr;
+    for (itr = 0; itr < capacity; itr++){
+        if (itr < capacity * percentage / 100 && itr < capacity){
+            s[itr] = '=';
+        } else {
+            s[itr] = '-';
+        }
+    }
+    s[++itr] = 0;
+}
+
+
+layer gaugeWidget(const char * name, size_t size)
+{
+    layer l = newLayer(size + 2, 1, 0, 0); /* leave spaces */
+    setTitle(l, name);
+    gaugeWidgetUpdate(l, 100); /* set it to 100% */
+    return l;
+}
+
+void gaugeWidgetUpdate(layer l, size_t percentage)
+{
+    gauge(&(l->matrix[0][1]), l->x - 2, percentage);
+}
+
 #endif
+
