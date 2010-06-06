@@ -59,7 +59,7 @@
 #define MATCHES_TYPE(_Type, _Elem, _Id) _Type * _object = (_Type *) _Elem; \
                                     if (_object != NULL) { \
                                         return _object->ID == _Id; \
-                                    } else { return -1; }
+                                    } else { return 0; }
 
 
 /* Static function prototypes */
@@ -262,11 +262,11 @@ extract_enemy_ids(room_t * room, gpnode_p enemies)
 
 
 /**
- * @brief
+ * @brief Allocates a new room_t * from a GPNode
  *
- * @param
+ * @param p GPNode "Room" Node.
  *
- * @return
+ * @return new room_t with information from the file.
  */
 static room_t *
 new_room_from_gpnode(gpnode_p p)
@@ -299,11 +299,12 @@ new_room_from_gpnode(gpnode_p p)
 
 
 /**
- * @brief
+ * @brief Extract professions from the GPNode Game Tree
  *
- * @param
+ * @param game Game to inject data to.
+ * @param root GPNode "Profesiones" Node.
  *
- * @return
+ * @return RETURN_OK in success, RETURN_ERR otherwise.
  */
 static int
 extract_professions(game_t * game, gpnode_p root)
@@ -311,7 +312,7 @@ extract_professions(game_t * game, gpnode_p root)
     profession_t ** professions = NULL;
     profession_t * profession;
     int prof_size = 0;
-    int exitval = 0;
+    int exitval = RETURN_OK;
     if (gpn_cmp_tag(root, "Profesiones")){
         for(root = gpn_child(root); root != NULL && exitval == 0;
             root = gpn_next(root)){
@@ -326,7 +327,7 @@ extract_professions(game_t * game, gpnode_p root)
                     professions[profession->ID] = profession;
                 else{
                     free(profession);
-                    exitval = 1;
+                    exitval = RETURN_ERR;
                 }
             }
         }
@@ -338,16 +339,17 @@ extract_professions(game_t * game, gpnode_p root)
 
 
 /**
- * @brief
+ * @brief Extract Important Points from a GPNode Game tree
  *
- * @param
+ * @param game Game to edit.
+ * @param root GPNode "PuntosImportantes" Node.
  *
- * @return
+ * @return RETURN_OK in success, RETURN_ERR otherwise.
  */
 static int
 extract_important_points(game_t * game, gpnode_p root)
 {
-    int exitval = 0;
+    int exitval = RETURN_OK;
     gpnode_p child;
 
     if (gpn_cmp_tag(root, "PuntosImportantes")){
@@ -357,7 +359,7 @@ extract_important_points(game_t * game, gpnode_p root)
             } else if(gpn_cmp_tag(child, "HabitacionSalidaID")){
                 game->ExitRoomID = atoi(gpn_get_content(child));
             } else {
-                exitval = 1;
+                exitval = RETURN_ERR;
             }
         }
     }
@@ -366,16 +368,17 @@ extract_important_points(game_t * game, gpnode_p root)
 
 
 /**
- * @brief
+ * @brief Extract enemies from the gpnode tree
  *
- * @param
+ * @param game Game where to put information.
+ * @param root GPNode "Enemigos" node.
  *
- * @return
+ * @return RETURN_OK in success, RETURN_ERR in error.
  */
 static int
 extract_enemies(game_t * game, gpnode_p root)
 {
-    int exitval = 0;
+    int exitval = RETURN_OK;
     gpnode_p node;
     enemy_t ** enemies = NULL;
     enemy_t * enemy;
@@ -397,7 +400,7 @@ extract_enemies(game_t * game, gpnode_p root)
                 enemy = new_enemy_from_gpnode(game, node);
                 if (enemy != NULL){
                     enemies[enem_size++] = enemy;
-                }
+                } else exitval = RETURN_ERR;
             }
         }
     }
@@ -408,16 +411,17 @@ extract_enemies(game_t * game, gpnode_p root)
 
 
 /**
- * @brief
+ * @brief Room parsing function
  *
- * @param
+ * @param game Pointer to game
+ * @param root Root node to parse
  *
- * @return
+ * @return RETURN_OK in success, RETURN_ERR in error.
  */
 static int
 extract_rooms(game_t * game, gpnode_p root)
 {
-    int exitval = 0;
+    int exitval = RETURN_OK;
     room_t ** rooms = NULL;
     room_t * room;
     int room_size = 0;
@@ -436,7 +440,7 @@ extract_rooms(game_t * game, gpnode_p root)
                 if (room != NULL)
                     rooms[room_itr++] = room;
                 else {
-                    exitval = 1;
+                    exitval = RETURN_ERR;
                     free(room);
                 }
             }
@@ -449,11 +453,14 @@ extract_rooms(game_t * game, gpnode_p root)
 
 
 /**
- * @brief
+ * @brief Generic function to return the index of an element in the vector.
  *
- * @param
+ * @param vector Vector of (void) pointers.
+ * @param max Vector max size.
+ * @param key ID.
+ * @param matches_id Boolean comparison function.
  *
- * @return
+ * @return index, or NO_IDX in failure.
  */
 static int
 getXByID(void **vector, int max, int key, int (*matches_id)(void *, int))
@@ -471,11 +478,12 @@ getXByID(void **vector, int max, int key, int (*matches_id)(void *, int))
 
 
 /**
- * @brief
+ * @brief Boolean comparison function to verify the enemy id
  *
- * @param
+ * @param r Pointer to enemy.
+ * @param id ID.
  *
- * @return
+ * @return 1 in success, 0 in error.
  */
 static int
 matches_enemy_id(void * enemy, int id)
@@ -484,12 +492,14 @@ matches_enemy_id(void * enemy, int id)
 }
 
 
+
 /**
- * @brief
+ * @brief Boolean comparison function to verify the profession id
  *
- * @param
+ * @param r Pointer to profession.
+ * @param id ID.
  *
- * @return
+ * @return 1 in success, 0 in error.
  */
 static int
 matches_profession_id(void * p, int id)
@@ -499,11 +509,12 @@ matches_profession_id(void * p, int id)
 
 
 /**
- * @brief
+ * @brief Boolean comparison function to verify the room id
  *
- * @param
+ * @param r Pointer to room.
+ * @param id Room ID.
  *
- * @return
+ * @return 1 in success, 0 in error.
  */
 static int
 matches_room_id(void * r, int id)
@@ -519,11 +530,11 @@ matches_room_id(void * r, int id)
 
 
 /**
- * @brief
+ * @brief Given a file name, parses and loads a game.
  *
- * @param
+ * @param filename Name of the game definition file.
  *
- * @return
+ * @return pointer to a new game.
  */
 game_t *
 load_game(const char *filename)
@@ -535,9 +546,11 @@ load_game(const char *filename)
     gpnode_p enemies = NULL, rooms = NULL;
     root = NULL;
     game_p = malloc(sizeof(game_t));
+
     file = fopen(filename, "r");
     if (file == NULL) return NULL;
 
+    /* parse returns NULL if the input file is not XML-Compliant. */
     root = parse(file, NULL, NULL);
     if (root == NULL){
         fclose(file);
@@ -556,6 +569,8 @@ load_game(const char *filename)
                 rooms = node;
             }
         }
+
+        /* Ensure in-order loading of nodes. */
         if (err == 0)
             err += extract_important_points(game_p, importantPoints);
         if (err == 0)

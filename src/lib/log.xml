@@ -1,0 +1,30 @@
+<Log>
+	<Seed>14</Seed>
+	<GameFile>test.xml</GameFile>
+	<Character>
+		<Name>Walter</Name>
+		<HP>42</HP>
+		<RoomID>3</RoomID>
+		<ProfessionID>1</ProfessionID>
+	</Character>
+	<Entry>
+		<Time>04/06/2010 23:21:20</Time>
+		<Action>Test5</Action>
+	</Entry>
+	<Entry>
+		<Time>04/06/2010 23:21:20</Time>
+		<Action>Test4</Action>
+	</Entry>
+	<Entry>
+		<Time>04/06/2010 23:21:20</Time>
+		<Action>Test3</Action>
+	</Entry>
+	<Entry>
+		<Time>04/06/2010 23:21:20</Time>
+		<Action>Test2</Action>
+	</Entry>
+	<Entry>
+		<Time>04/06/2010 23:21:20</Time>
+		<Action>Test</Action>
+	</Entry>
+</Log>

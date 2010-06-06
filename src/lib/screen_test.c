@@ -1,5 +1,5 @@
 /*
- *      screen.h
+ *      filename.c
  *
  *      Copyright 2010:
  *          Sebastián Maio <email@goes.here>
@@ -33,8 +33,8 @@
  *      OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __LIB_SCREEN
-#define __LIB_SCREEN 1
+
+#define PROJECT_NAME_VERSION 0.1
 
 /*
  *  System includes
@@ -46,32 +46,42 @@
 /*
  *  General includes
  */
-
+#include "screen.h"
 /*
  *  Macros and constants
  */
 
-typedef struct Screen * screen;
-typedef struct Layer * layer;
-
-#define SCR_DRAW_MARGINS 2
-#define SCR_AUTO_WARP 1
-
+/*
+ *  Static function prototypes
+ */
 
 /*
  *  Public function prototypes
  */
 
-screen initscr(FILE *, size_t, size_t);
-layer newLayer(size_t, size_t, size_t, size_t);
+int
+main(int argc, char** argv)
+{
+    screen scr = initscr(stdout, 60, 10);
+    layer l = newLayer(42, 14, 4, 4);
+    const char * m[] = {"Esto es una prueba",
+         "para ver si anda",
+         NULL
+        };
+    l = draw(l, m);
+    layer layers[] = {l, NULL};
+    update(scr, layers);
+    absMoveLayer(l, 2, 2);
+    update(scr, layers);
+    endscr(scr);
 
-void setMargins(layer, int);
-layer settext(layer, const char * s);
-layer draw(layer, const char **);
-void update(screen, layer *);
-void absMoveLayer(layer, size_t, size_t);
+    return EXIT_SUCCESS;
+}
 
-void endscr(screen);
-void freeLayer(layer);
+/*
+ *  Static functions
+ */
 
-#endif
+/*
+ *  Public functions
+ */

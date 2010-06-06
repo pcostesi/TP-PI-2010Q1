@@ -55,9 +55,10 @@
 
 typedef struct Layer{
     char ** matrix;
-    size_t x_size, y_size;
+    size_t x, y;
     size_t x_offset, y_offset;
-    char * mode;
+    int mode;
+    char * name;
 } layer_t;
 
 
@@ -72,45 +73,31 @@ typedef struct Screen{
  *  Static function prototypes
  */
 
-char ** matrixAlloc(size_t, size_t);
+static char ** matrixAlloc(size_t, size_t);
+static void drawLayer(screen scr, layer l);
+static void bufferToStream(screen scr);
 
 /*
  *  Static functions
  */
 
-static int getopts(const char *opts)
+static void drawMargins(screen scr, layer l)
 {
-    int bmask = 0;
-    for (; opts != NULL && *opts != '\0'; opts++){
-        switch(*opts){
-            case 'm':
-                bmask |= SCR_DRAW_MARGINS;
-                break;
-            case 'w':
-                bmask 1= SCR_AUTO_WARP;
-                break;
-            default:
-        }
-    }
-    return bmask;
+    int itr_x, itr_y;
+    char c;
 }
 
 static void drawLayer(screen scr, layer l)
 {
-    int itr_x, itr_y, mode;
-    char c;
-    mode = getopts(l->mode);
-
-    for (itr_y = l->y_offset; itr_y < scr->y && itr_y < l->y; itr_y++){
-        for (itr_x = l->x_offset; itr_x < scr->x && itr_x < l->x; itr_x++){
-            if ((itr_y == l->y_offset || itr_y == l->y_offset + l->y - 1) &&
-                (itr_x == l->x_offset || itr_x == l->x_offset + l->x - 1) &&
-                mode & SCR_DRAW_MARGINS){
-                c = '^';
-            } else {
-                c = l->matrix[itr_y][itr_x];
-            }
-            scr->buffer[itr_y][itr_x] = c;
+    int itr_x, itr_y;
+    for (itr_y = l->y_offset; \
+         itr_y < scr->y && itr_y < l->y + l->y_offset; \
+         itr_y++){
+        for (itr_x = l->x_offset; \
+             itr_x < scr->x && itr_x < l->x + l->x_offset; \
+             itr_x++){
+            scr->buffer[itr_y][itr_x] = \
+                l->matrix[itr_y - l->y_offset][itr_x - l->x_offset];
         }
     }
 }
@@ -122,8 +109,9 @@ static void bufferToStream(screen scr)
         for (itr_x = 0; itr_x < scr->x; itr_x++){
             fputc(scr->buffer[itr_y][itr_x], scr->stream);
         }
-        if (itr_y != scr->y - 1) fputc('\n' scr->stream);
+        if (itr_y != scr->y - 1) fputc('\n', scr->stream);
     }
+    fflush(scr->stream);
 }
 
 static char **
@@ -134,7 +122,7 @@ matrixAlloc(size_t x, size_t y)
     matrix = malloc(y * sizeof(char *));
     if (matrix != NULL){
         for (itr_y = 0; itr_y < y; itr_y++){
-            matrix[itr_y] = malloc(sizeof(char));
+            matrix[itr_y] = malloc(sizeof(char) * x);
             for (itr_x = 0; itr_x < x; itr_x++){
                 matrix[itr_y][itr_x] = ' ';
             }
@@ -169,9 +157,12 @@ newLayer(size_t x, size_t y, size_t x_offset, size_t y_offset)
     layer result = malloc(sizeof(layer_t));
     if (result != NULL){
         result->matrix = matrixAlloc(x, y);
+        result->y = y;
+        result->x = x;
         result->x_offset = x_offset;
         result->y_offset = y_offset;
-        result->mode = NULL;
+        result->mode = SCR_AUTO_WARP | SCR_DRAW_MARGINS;
+        result->name = NULL;
     }
     return result;
 }
@@ -192,12 +183,13 @@ draw(layer l, const char ** m)
     if (l != NULL){
         y = l->y;
         x = l->x;
-        for (itr_y = 0; m[itr_y] != NULL; itr_y++){
-            for (itr_x = 0; m[itr_y][itr_x] != 0; itr_x++){
+        for (itr_y = 0; m[itr_y] != NULL && itr_y < l->y; itr_y++){
+            for (itr_x = 0; itr_y < l->x && m[itr_y][itr_x] != 0; itr_x++){
                 l->matrix[itr_y][itr_x] = m[itr_y][itr_x];
             }
         }
     }
+    return l;
 }
 
 void
@@ -213,12 +205,13 @@ clrscr(screen scr)
 void
 update(screen scr, layer * layers)
 {
-    int itr_y, itr_x;
+    int itr_y, itr_x, itr_layers;
 
+    clrscr(scr);
     if (scr != NULL){
         /* draw each layer, sequentially */
-        for (; layers != NULL; layers++){
-            drawLayer(scr, layers);
+        for (itr_layers = 0; layers[itr_layers] != NULL; itr_layers++){
+            drawLayer(scr, layers[itr_layers]);
         }
         bufferToStream(scr);
     }
@@ -229,6 +222,7 @@ void
 endscr(screen scr)
 {
     if (scr != NULL){
+        fputc('\n', scr->stream);
         free(scr->buffer);
         free(scr);
     }

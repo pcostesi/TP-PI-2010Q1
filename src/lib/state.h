@@ -42,6 +42,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 /*
  *  General includes
@@ -55,7 +56,7 @@ typedef struct logbook_s * logbook;
  *  Public function prototypes
  */
 
-logbook         logmsg(logbook, char *);
+logbook         logmsg(logbook, size_t, const char *, ...);
 void            free_logbook(logbook);
 logbook         Logbook(int, character_t *, char *);
 int             log_to_disk(logbook, const char *);

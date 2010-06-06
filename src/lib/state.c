@@ -343,12 +343,26 @@ save_state(game_t * g, logbook log, const char * filename)
 
 
 logbook
-logmsg(logbook book, char * action)
+logmsg(logbook book, size_t size, const char * fmt, ...)
 {
     log_entry_t * new_entry;
+    char * action;
+    int howmany;
+    va_list vargs;
+    va_start(vargs, fmt);
+
     if (book != NULL){
         new_entry = malloc(sizeof(log_entry_t));
+
+        action = malloc(size);
+        howmany = vsprintf(action, fmt, vargs);
+        if (howmany != size - 1){
+            free(action);
+            return NULL;
+        }
+        va_end(vargs);
         new_entry->action = action;
+
         time(&new_entry->time);
         new_entry->next = book->log;
         book->log = new_entry;
@@ -362,7 +376,7 @@ free_logbook(logbook book)
     log_entry_t * entry, * aux;
     for (entry = book->log; entry != NULL;){
         aux = entry;
-	free(entry->action);
+    free(entry->action);
         entry = entry->next;
         free(aux);
     }
