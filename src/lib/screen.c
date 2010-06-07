@@ -42,12 +42,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 /*
  *  General includes
  */
 
 #include "screen.h"
+#include "strings.h"
 
 /*
  *  Macros and constants
@@ -80,12 +82,16 @@ static char ** matrixAlloc(size_t, size_t);
 static void drawLayer(screen scr, layer l);
 static void bufferToStream(screen scr);
 static void drawMargins(screen scr, layer l);
+static void zeroOut(char ** m, size_t x, size_t y);
+static void freeMatrix(char ** m, size_t y);
+
 
 /*
  *  Static functions
  */
 
-static void drawTitle(screen scr, layer l)
+static void
+drawTitle(screen scr, layer l)
 {
     #define _SET_BUFFER(A) if (itr_x++ >= 0 && itr_x < l->x + 1) \
                                 scr->buffer[itr_y][itr_x] = (A)
@@ -110,7 +116,8 @@ static void drawTitle(screen scr, layer l)
     #undef _SET_BUFFER
 }
 
-static void drawMargins(screen scr, layer l)
+static void
+drawMargins(screen scr, layer l)
 {
     int itr_x, itr_y;
     int y_bound = MIN(l->y + l->y_offset, scr->y);
@@ -141,7 +148,8 @@ static void drawMargins(screen scr, layer l)
                 scr->buffer[itr_y][itr_x] = '#';
 }
 
-static void drawLayer(screen scr, layer l)
+static void
+drawLayer(screen scr, layer l)
 {
     int itr_x, itr_y;
 
@@ -164,7 +172,8 @@ static void drawLayer(screen scr, layer l)
     }
 }
 
-static void bufferToStream(screen scr)
+static void
+bufferToStream(screen scr)
 {
     int itr_x, itr_y;
     fputc('\n', scr->stream);
@@ -190,6 +199,29 @@ matrixAlloc(size_t x, size_t y)
         }
     }
     return matrix;
+}
+
+static void
+freeMatrix(char ** m, size_t y)
+{
+    int itr_y;
+    if (m != NULL){
+        for (itr_y = 0; itr_y < y; itr_y++){
+            free(m[itr_y]);
+        }
+        free(m);
+    }
+}
+
+static void
+zeroOut(char ** m, size_t x, size_t y)
+{
+    int itr = 0;
+    if (m != NULL){
+        for (itr = 0; itr < y; itr++){
+            memset(m[itr], ' ', x);
+        }
+    }
 }
 
 /*
@@ -249,7 +281,8 @@ draw(layer l, const char ** m)
     return l;
 }
 
-layer setText(layer l, int i, const char * t)
+layer
+setText(layer l, int i, const char * t)
 {
     int itr_x;
     for (itr_x = 0; itr_x < l->x && t[itr_x] != 0; itr_x++){
@@ -289,18 +322,21 @@ endscr(screen scr)
 {
     if (scr != NULL){
         fputc('\n', scr->stream);
-        free(scr->buffer);
+        freeMatrix(scr->buffer, scr->y);
         free(scr);
     }
 }
 
 
-void setTitle(layer l, const char * c)
+void
+setTitle(layer l, const char * c)
 {
-    l->name = c;
+    l->name = malloc(strlen(c) + 1);
+    strcpy(l->name, c);
 }
 
-void setMode(layer l, int i)
+void
+setMode(layer l, int i)
 {
     l->mode = i; 
 }
@@ -309,7 +345,9 @@ void
 freeLayer(layer l)
 {
     if (l != NULL){
-        free(l->matrix);
+        freeMatrix(l->matrix, l->y);
+        if (l->name != NULL)
+            free(l->name);
         free(l);
     }
 }
@@ -325,11 +363,11 @@ gauge(char * s, size_t capacity, size_t percentage)
             s[itr] = '-';
         }
     }
-    s[++itr] = 0;
 }
 
 
-layer gaugeWidget(const char * name, size_t size)
+layer
+gaugeWidget(const char * name, size_t size)
 {
     layer l = newLayer(size + 2, 1, 0, 0); /* leave spaces */
     setTitle(l, name);
@@ -337,10 +375,67 @@ layer gaugeWidget(const char * name, size_t size)
     return l;
 }
 
-void gaugeWidgetUpdate(layer l, size_t percentage)
+
+void
+gaugeWidgetUpdate(layer l, size_t percentage)
 {
     gauge(&(l->matrix[0][1]), l->x - 2, percentage);
 }
+
+/* TODO: replace this with a space-aware, self-warping function. */
+layer
+text(layer l, const char *s)
+{
+    int itr;
+    int x = 0, y = 0;
+    zeroOut(l->matrix, l->x, l->y);
+    for (itr = 0; s[itr] != 0 && y < l->y; itr++){
+        if (x < l->x){
+            l->matrix[y][x++] = s[itr];
+        } else if (l->mode & SCR_AUTO_WARP) {
+            x = 0;
+            y++;
+            itr--;
+        }
+    }
+    return l;
+}
+
+layer
+resizeLayer(layer l, size_t x, size_t y)
+{
+    int itr_y;
+    char ** m = matrixAlloc(x, y);
+    if (m != NULL && l != NULL){
+        for (itr_y = 0; itr_y < l->y; itr_y++){
+            memcpy(m[itr_y], l->matrix[itr_y], l->x);
+        }
+        freeMatrix(l->matrix, l->y);
+        l->matrix = m;
+        l->y = y;
+        l->x = x;
+    }
+    return l;
+    
+}
+
+layer
+vmenu(layer l, const char ** opts)
+{
+    zeroOut(l->matrix, l->x, l->y);
+    int itr;
+    char * opt = malloc(1);
+    for (itr = 0; opts[itr] != NULL; itr++);
+    l = resizeLayer(l, l->x, itr + 2);
+    for (itr = 0; opts[itr] != NULL && itr < l->y - 1; itr++){
+        opt = realloc(opt, strlen(opts[itr]) + nlen(itr + 1) + strlen(" -   ") + 1);
+        sprintf(opt, "  %d - %s", itr + 1, opts[itr]);
+        setText(l, itr + 1, opt);
+    }
+    free(opt);
+    return l;
+}
+
 
 #endif
 

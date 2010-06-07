@@ -81,8 +81,12 @@ layer setText(layer, int, const char *);
 void endscr(screen);
 void freeLayer(layer);
 
+layer resizeLayer(layer, size_t, size_t);
+
 char * gauge(char *, size_t, size_t);
 layer gaugeWidget(const char *, size_t);
 void gaugeWidgetUpdate(layer, size_t);
+
+layer vmenu(layer l, const char **);
 
 #endif
