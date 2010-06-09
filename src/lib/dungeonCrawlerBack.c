@@ -2,8 +2,8 @@
 
 
 
-void
-getName(char name[])
+int
+getName(char name[], int len)
 {
     int i, validName = INVALID, a;
     while( validName == INVALID)
@@ -11,7 +11,7 @@ getName(char name[])
                 validName = VALID;
                 i = 0;
                 char buff = getchar();
-                while( buff != '\n' && i < 30 )
+                while( buff != '\n' && i < len )
                 {
                         name[i] = buff;
                         i++;
@@ -22,21 +22,22 @@ getName(char name[])
 
                 if( i == 0)
                 {
-                        printf("Insert at least 1 character\n");
                         DELETE_BUFFER;
                         validName = INVALID;
+                        return NAME_TOO_SHORT;
                 }
-                else if( i == 30)
+                else if( i == len)
                 {
-                        printf("The name is too long, insert a valid name with less than 31 characters please \n");
+                        
                         DELETE_BUFFER;
                         validName = INVALID;
+                        return NAME_TOO_LONG;
                 }
                 else if( name[0] == ' ' || name[i-1] == ' ')
                 {
-                        printf("The name must start and end with a number or digit \n");
                         DELETE_BUFFER;
                         validName = INVALID;
+                        return BAD_NAME_FORMAT;
                 }
                 else
                 {
@@ -46,88 +47,13 @@ getName(char name[])
                                         validName = INVALID;
                         }
                         if(!validName)
-                                printf("Incorrect name, inster only characters, numbers or spaces, please \n");
+                                return BAD_NAME_FORMAT;
                         if (validName)
-                          return;
+                          return NAME_OK;
                 }
         }
 }
 
-
-void
-chooseProfession(character_t *player, game_t *actualGame)
-{
-        int i = 0, aux;
-        printf("The available professions are:\n");
-        while( i < actualGame->professions_size )
-        {
-                printf("%d - %s\n", i+1, actualGame->professions[i]->name);
-                i++;
-        }
-        do
-        {
-                aux = getint("\n Select your desired profession \n");
-        }while( aux > i || aux < 0 );
-        player->professionID = actualGame->professions[aux-1]->ID;
-        player->HP = actualGame->professions[aux-1]->minHP + ( (float)(rand())/RAND_MAX ) *
-          (actualGame->professions[aux-1]->maxHP - actualGame->professions[aux-1]->minHP);
-        printf("%s, you have choosen to be a %s, your initial health points are %d\n",player->name, actualGame->professions[aux-1]->name, player->HP);
-        return;
-}
-
-
-/*Checks if the player has been into the actual room, if he hasn't it generates the fiends that  there will be in there, and simulate the combat
-returnig if player is dead or alive*/
-int
-enterRoom(character_t *player, room_t *actualRoom, game_t *actualGame, logbook log)
-{
-    int status = ALIVE, i = 0;
-    player->roomID = actualRoom->ID;
-    enemy_t * enemy;
-    int size = strlen("Player  enters room .") + strlen(player->name) + strlen(actualRoom->name) + 1; /*compensate for zero*/
-    char * str = malloc(size * sizeof(char));
-    sprintf(str, "Player %s enters room %s.", player->name, actualRoom->name);
-    logmsg(log, str);
-    printf(" %s, you are standing in the room: %s \n\n", player->name, actualRoom->name);
-    roomDescription(*actualRoom);
-    if (actualRoom->visited == 0)
-    {
-        while( status == ALIVE && i < actualRoom->enemies_size)
-        {
-        enemy = getEnemyByID(actualGame, actualRoom->enemy_ids[i]);
-            status = combat(player, enemy, getProfessionByID(actualGame, player->professionID), actualGame);
-            i++;
-        size = strlen("Player  fights enemy .") + strlen(player->name) + strlen(enemy->name) + 1; /*compensate for zero*/
-        str = malloc(size * sizeof(char));
-        sprintf(str, "Player %s fights enemy %s.", player->name, enemy->name);
-        logmsg(log, str);
-        getPotion(player);
-        }
-        actualRoom->visited = 1;
-    }
-        if(actualRoom->ID == actualGame->ExitRoomID && status != DEAD)
-                status = WON;
-    return status;
-}
-
-
-
-
-/*prints the description of the room*/
-void
-roomDescription(room_t actualRoom)
-{
-    int i = 0;
-    char buff = actualRoom.description[0];
-    while( buff != '\0' )
-    {
-        putchar(buff);
-        i++;
-        buff = actualRoom.description[i];
-    }
-    printf("\n");
-    return;
-}
 
 
 
@@ -185,73 +111,27 @@ damageRoll(int max, int min)
     return (min + ( (float)(rand())/RAND_MAX ) * (max - min) );
 }
 
-/*Displays a menu with the actions that the player can take*/
+
+/*Restores 50% of the health the player is lacking*/
 int
-menu(game_t *actualGame, character_t *player, logbook log)
-{
-  do
-  {
-    char name[36];
-    int aux;
-    printf("1 - Switch rooms\n");
-    printf("2 - Drink a potion\n");
-    printf("3 - Save Game...\n");
-    printf("4 - Load Game...\n");
-    printf("5 - Quit game\n");
-    printf("6 - Dump Actions to...\n");
-
-    do
-    {
-      aux = getint("\n Select an option please \n");
-    }while( aux > 7 || aux < 1 );
-
-    switch(aux)
-    {
-      case 1 : return ALIVE;
-      case 2 : drinkPotion(player);
-          break;
-      case 3 :getName(name);
-          strcat(name, ".xml");
-          save_state(actualGame, log, name );
-          break;
-      case 4 :do
-          {
-          printf("Insert the name of the source file, without the extension please. \n");
-          getName(name);
-          strcat(name, ".xml");
-          actualGame = load_state(name, log);
-          if(actualGame == NULL)
-          printf("Invalid file name or corrupt data. \n");
-          } while( actualGame == NULL);
-          break;
-      case 5 : return DEAD;
-      case 6 : printf("Type the name of the dump and then press ENTER\n"); getName(name); log_to_disk(log, name); break;
-     }
-
-  } while(1);
-}
-
-
-/*Restores 50% of the health the player is lackying*/
-void
 drinkPotion(character_t *player)
 {
   int restored;
   if(player->potions == 0)
-    printf("You have no potions\n");
+    return -1;
   else
   {
     restored = (player->maxHP - player->HP) * 0.5 ;
     player->potions--;
     player->HP += restored;
-    printf("You have had %d health Points restored\n", restored);
+    return restored;
   }
   return;
 }
 
 
 /*Determines if the player will find or not a healing potion*/
-void
+int
 getPotion(character_t *player)
 {
   int chance = (25 + ( (float)(rand())/RAND_MAX ) * 10 );

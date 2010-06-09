@@ -43,6 +43,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <ctype.h>
 
 /*
  *  General includes
@@ -90,14 +91,21 @@ static void freeMatrix(char ** m, size_t y);
  *  Static functions
  */
 
+
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 static void
 drawTitle(screen scr, layer l)
 {
-    #define _SET_BUFFER(A) if (itr_x++ >= 0 && itr_x < l->x + 1) \
+    #define _SET_BUFFER(A) if (itr_x++ >= 0 && itr_x < x_bound) \
                                 scr->buffer[itr_y][itr_x] = (A)
     int itr_x, itr_y;
     char * t = NULL;
-    int y_bound = MIN(l->y + l->y_offset, scr->y);
     int x_bound = MIN(l->x + l->x_offset, scr->x);
 
     /* Draw title */
@@ -116,6 +124,13 @@ drawTitle(screen scr, layer l)
     #undef _SET_BUFFER
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 static void
 drawMargins(screen scr, layer l)
 {
@@ -126,8 +141,8 @@ drawMargins(screen scr, layer l)
     /* Draw top and down margins */
     for (itr_y = l->y_offset - 1; itr_y < y_bound + 1; itr_y += l->y + 1){
         for (itr_x = l->x_offset; itr_x < x_bound; itr_x++){
-            if (itr_x >= 0 && itr_y >= 0){
-                scr->buffer[itr_y][itr_x] = '~';
+            if (itr_x >= 0 && itr_y >= 0 && itr_x < scr->x && itr_y < scr->y){
+                scr->buffer[itr_y][itr_x] = '-';
             }
         }
     }
@@ -135,7 +150,7 @@ drawMargins(screen scr, layer l)
     /* Draw left and right margins */
     for (itr_y = l->y_offset; itr_y < y_bound; itr_y++){
         for (itr_x = l->x_offset - 1; itr_x < x_bound + 1; itr_x += l->x + 1){
-            if (itr_x >= 0 && itr_y >= 0){
+            if (itr_x >= 0 && itr_y >= 0 && itr_x < scr->x && itr_y < scr->y){
                 scr->buffer[itr_y][itr_x] = '|';
             }
         }
@@ -144,10 +159,17 @@ drawMargins(screen scr, layer l)
     /* Draw corners */
     for (itr_y = l->y_offset - 1; itr_y < y_bound + 1; itr_y += l->y + 1)
         for (itr_x = l->x_offset - 1; itr_x < x_bound + 1; itr_x += l->x + 1)
-            if (itr_x >= 0 && itr_y >= 0)
+            if (itr_x >= 0 && itr_y >= 0 && itr_x < scr->x && itr_y < scr->y)
                 scr->buffer[itr_y][itr_x] = '#';
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 static void
 drawLayer(screen scr, layer l)
 {
@@ -172,6 +194,13 @@ drawLayer(screen scr, layer l)
     }
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 static void
 bufferToStream(screen scr)
 {
@@ -186,6 +215,13 @@ bufferToStream(screen scr)
     fflush(scr->stream);
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 static char **
 matrixAlloc(size_t x, size_t y)
 {
@@ -201,6 +237,13 @@ matrixAlloc(size_t x, size_t y)
     return matrix;
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 static void
 freeMatrix(char ** m, size_t y)
 {
@@ -213,6 +256,13 @@ freeMatrix(char ** m, size_t y)
     }
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 static void
 zeroOut(char ** m, size_t x, size_t y)
 {
@@ -228,12 +278,16 @@ zeroOut(char ** m, size_t x, size_t y)
  *  Public functions
  */
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 screen
 initscr(FILE * stream, size_t x, size_t y)
 {
-    int itr_y, itr_x;
-    char ** buffer;
-
     screen scr = malloc(sizeof(screen_t));
     if (scr != NULL){
         scr->stream = stream;
@@ -244,6 +298,13 @@ initscr(FILE * stream, size_t x, size_t y)
     return scr;
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 layer
 newLayer(size_t x, size_t y, int x_offset, int y_offset)
 {
@@ -254,12 +315,19 @@ newLayer(size_t x, size_t y, int x_offset, int y_offset)
         result->x = x;
         result->x_offset = x_offset;
         result->y_offset = y_offset;
-        result->mode = SCR_AUTO_WARP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE;
+        result->mode = SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE;
         result->name = NULL;
     }
     return result;
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 void
 absMoveLayer(layer l, int x, int y)
 {
@@ -269,28 +337,61 @@ absMoveLayer(layer l, int x, int y)
     }
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 layer
 draw(layer l, const char ** m)
 {
-    int itr_x, itr_y;
+    int itr_y;
     if (l != NULL){
         for (itr_y = 0; m[itr_y] != NULL && itr_y < l->y; itr_y++){
-            setText(l, itr_y, m[itr_y]);
+            setText(l, 0, itr_y, m[itr_y]);
         }
     }
     return l;
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 layer
-setText(layer l, int i, const char * t)
+setText(layer l,int x, int y, const char * t)
 {
     int itr_x;
-    for (itr_x = 0; itr_x < l->x && t[itr_x] != 0; itr_x++){
-        l->matrix[i][itr_x] = t[itr_x];
+    if (l->y <= y || l->x <= x) return NULL;
+    for (itr_x = x; itr_x < l->x && t[itr_x - x] != 0; itr_x++){
+        l->matrix[y][itr_x] = t[itr_x - x];
     }
     return l;
 }
 
+layer
+setNumber(layer l,int x, int y, unsigned int i)
+{
+    int itr_x;
+    if (l->y <= y || l->x <= x) return NULL;
+    for (itr_x = x; itr_x < l->x && i > 0; itr_x++, i /= 10){
+        l->matrix[y][itr_x] = i % 10 + '0';
+    }
+    return l;
+}
+
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 void
 clrscr(screen scr)
 {
@@ -301,11 +402,17 @@ clrscr(screen scr)
             scr->buffer[itr_y][itr_x] = ' ';
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 void
 update(screen scr, layer * layers)
 {
-    int itr_y, itr_x, itr_layers;
-
+    int itr_layers;
     clrscr(scr);
     if (scr != NULL){
         /* draw each layer, sequentially */
@@ -317,6 +424,13 @@ update(screen scr, layer * layers)
 }
 
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 void
 endscr(screen scr)
 {
@@ -328,6 +442,13 @@ endscr(screen scr)
 }
 
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 void
 setTitle(layer l, const char * c)
 {
@@ -335,12 +456,26 @@ setTitle(layer l, const char * c)
     strcpy(l->name, c);
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 void
 setMode(layer l, int i)
 {
     l->mode = i; 
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 void
 freeLayer(layer l)
 {
@@ -352,20 +487,41 @@ freeLayer(layer l)
     }
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 char *
 gauge(char * s, size_t capacity, size_t percentage)
 {
     size_t itr;
+    size_t idx2;
+    int idx3;
+    if (capacity < 5 || percentage > 100) return NULL;
+    idx2 = (capacity - 4) / 2;
+    idx3 = sprintf(&(s[idx2]), "%d%%", (int) percentage);
     for (itr = 0; itr < capacity; itr++){
-        if (itr < capacity * percentage / 100 && itr < capacity){
+        if (itr < idx3 + idx2 && itr >= idx2) {
+        } else if (itr < capacity * percentage / 100 && itr < capacity){
             s[itr] = '=';
         } else {
             s[itr] = '-';
         }
     }
+    return s;
 }
 
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 layer
 gaugeWidget(const char * name, size_t size)
 {
@@ -376,39 +532,85 @@ gaugeWidget(const char * name, size_t size)
 }
 
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 void
 gaugeWidgetUpdate(layer l, size_t percentage)
 {
     gauge(&(l->matrix[0][1]), l->x - 2, percentage);
 }
 
-/* TODO: replace this with a space-aware, self-warping function. */
 layer
-text(layer l, const char *s)
+text (layer l, const char *s)
 {
-    int itr;
-    int x = 0, y = 0;
+    return idxtext(l, 1, s);
+}
+
+int
+is_valid_char(char c)
+{
+    int ret = 0;
+    /* Skip problematic characters */
+    if (!iscntrl(c) && c != '\n' && c != '\t' && c < 128 && c >= 0)
+        ret = 1;
+    return ret;
+}
+
+/* TODO: replace this with a space-aware, self-WRAPing function. */
+layer
+idxtext(layer l, int start, const char *s)
+{
+    #define LEFT_MARGIN 1
+    #define RIGHT_MARGIN 1
+    int itr, aux;
+    int x = LEFT_MARGIN, y = start;
     zeroOut(l->matrix, l->x, l->y);
     for (itr = 0; s[itr] != 0 && y < l->y; itr++){
-        if (x < l->x){
-            l->matrix[y][x++] = s[itr];
-        } else if (l->mode & SCR_AUTO_WARP) {
-            x = 0;
+        if (is_valid_char(s[itr])){
+            if (x < l->x - RIGHT_MARGIN){
+                l->matrix[y][x++] = s[itr];
+            } else if (l->mode & SCR_AUTO_WRAP) {
+                x = LEFT_MARGIN;
+                y++;
+                itr--;
+            }
+        } else if (s[itr] == '\n'){
+            x = LEFT_MARGIN;
             y++;
-            itr--;
+        } else if (s[itr] == '\t'){
+            aux = 4;
+            while (aux--){
+                if (x < l->x){
+                    l->matrix[y][x++] = ' ';
+                } else aux = 0;
+            }
         }
     }
     return l;
+    #undef LEFT_MARGIN
+    #undef RIGHT_MARGIN
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 layer
 resizeLayer(layer l, size_t x, size_t y)
 {
     int itr_y;
     char ** m = matrixAlloc(x, y);
     if (m != NULL && l != NULL){
-        for (itr_y = 0; itr_y < l->y; itr_y++){
-            memcpy(m[itr_y], l->matrix[itr_y], l->x);
+        for (itr_y = 0; itr_y < MIN(l->y, y); itr_y++){
+            memcpy(m[itr_y], l->matrix[itr_y], MIN(l->x, x));
         }
         freeMatrix(l->matrix, l->y);
         l->matrix = m;
@@ -419,23 +621,66 @@ resizeLayer(layer l, size_t x, size_t y)
     
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 layer
-vmenu(layer l, const char ** opts)
+vmenu(layer l, const char * txt, const char ** opts)
 {
+    int itr, x;
+    /* get the text height + 2 lines*/
+    int normalTextSize = strlen(txt) / l->x + 3;
     zeroOut(l->matrix, l->x, l->y);
-    int itr;
-    char * opt = malloc(1);
+    /* Get the number of options to show. */
     for (itr = 0; opts[itr] != NULL; itr++);
-    l = resizeLayer(l, l->x, itr + 2);
-    for (itr = 0; opts[itr] != NULL && itr < l->y - 1; itr++){
-        opt = realloc(opt, strlen(opts[itr]) + nlen(itr + 1) + strlen(" -   ") + 1);
-        sprintf(opt, "  %d - %s", itr + 1, opts[itr]);
-        setText(l, itr + 1, opt);
+    if (SCR_NO_AUTO_RESIZE != (l->mode & SCR_NO_AUTO_RESIZE))
+        l = resizeLayer(l, l->x, itr + normalTextSize + 1);
+    idxtext(l, 1, txt);
+    for (itr = 0; opts[itr] != NULL && itr + normalTextSize < l->y - 1; itr++){
+        x = nlen(itr + 1) + 3;
+        /* snprintf is not ANSI C (std89), it's ISO C (std99). Any
+         * half-decent implementation has it. Anyway... */
+        setNumber(l, 1, normalTextSize + itr, (unsigned int)(itr + 1));
+        setText(l, x - 2, normalTextSize + itr, ")");
+        setText(l, x, normalTextSize + itr, opts[itr]);
     }
-    free(opt);
     return l;
 }
 
+int
+getScreenDimensions(screen scr, int *x, int *y)
+{
+    int value = 1;
+    if (scr != NULL){
+        value = 0;
+        if (x != NULL) *x = scr->x;
+        if (y != NULL) *y = scr->y;
+    }
+    return value;
+}
+
+void
+centerText(layer l, const char * t)
+{
+    char * t2 = dupstr(t);
+    char * tok = t2;
+    int insertFrom = 0, margin = 0, lines = 1, itr = 0;
+    while (tok[itr] != 0)
+        if (tok[itr++] == '\n')
+            lines++;
+    insertFrom = (l->y - lines) / 2;
+    zeroOut(l->matrix, l->x, l->y);
+    while((tok = strtok(t2, "\n")) != NULL){
+        margin = (l->x - strlen(tok)) / 2;
+        setText(l, margin, insertFrom++, tok);
+        t2 = NULL;
+    }
+    free(t2);
+}
 
 #endif
 

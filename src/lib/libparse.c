@@ -65,7 +65,13 @@ typedef struct GPNode{
 
 /* Public functions */
 
-
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 gpnode_p
 gpn_init(gpnode_p node){
     if (node != NULL){
@@ -79,6 +85,11 @@ gpn_init(gpnode_p node){
     return node;
 }
 
+/**
+ * @brief
+ *
+ * @return 
+ * */
 gpnode_p
 gpn_alloc(void)
 {
@@ -88,6 +99,14 @@ gpn_alloc(void)
     return node;
 }
 
+
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 void
 gpn_free(gpnode_p node)
 {
@@ -103,6 +122,14 @@ gpn_free(gpnode_p node)
     }
 }
 
+
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 void
 gpn_link_as_child(gpnode_p parent, gpnode_p child)
 {
@@ -119,6 +146,14 @@ gpn_link_as_child(gpnode_p parent, gpnode_p child)
     }
 }
 
+
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 gpnode_p
 new_gpn_child(gpnode_p node)
 {
@@ -128,6 +163,13 @@ new_gpn_child(gpnode_p node)
     return aux;
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 gpnode_p gpn_next(gpnode_p n)
 {
     if (n != NULL)
@@ -135,6 +177,13 @@ gpnode_p gpn_next(gpnode_p n)
     return n;
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 gpnode_p gpn_prev(gpnode_p n)
 {
     if (n != NULL){
@@ -146,12 +195,26 @@ gpnode_p gpn_prev(gpnode_p n)
     return n;
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 gpnode_p gpn_parent(gpnode_p n)
 {
     if (n != NULL) n = n->parent;
     return n;
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 gpnode_p gpn_child(gpnode_p n)
 {
     if (n != NULL)
@@ -159,6 +222,13 @@ gpnode_p gpn_child(gpnode_p n)
     return n;
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 int
 gpn_cmp_tag(gpnode_p n, const char * c)
 {
@@ -168,6 +238,13 @@ gpn_cmp_tag(gpnode_p n, const char * c)
         return strcmp(gpn_get_tag(n), c) == 0;
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 int
 gpn_ncmp_tag(gpnode_p n, const char * c, int h)
 {
@@ -177,6 +254,13 @@ gpn_ncmp_tag(gpnode_p n, const char * c, int h)
         return strncmp(gpn_get_tag(n), c, h) == 0;
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 void
 gpn_set_content(gpnode_p n, char * c)
 {
@@ -184,6 +268,13 @@ gpn_set_content(gpnode_p n, char * c)
         n->value = c;
 }
 
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 void
 gpn_set_tag(gpnode_p n, char * c)
 {
@@ -191,6 +282,14 @@ gpn_set_tag(gpnode_p n, char * c)
         n->name = c;
 }
 
+
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 char *
 gpn_get_content(gpnode_p n)
 {
@@ -200,6 +299,14 @@ gpn_get_content(gpnode_p n)
         return NULL;
 }
 
+
+/**
+ * @brief
+ *
+ * @param
+ *
+ * @return
+ */
 char *
 gpn_get_tag(gpnode_p n)
 {
@@ -214,13 +321,23 @@ gpn_get_tag(gpnode_p n)
  *
  * @param stream: the input stream.
  * @param lp: the error line variable (or NULL).
- * @param cp: the error column variable.
+ * @param cp: the error column variable (or NULL).
  *
  * @return A pointer to the root of the parsed tree or NULL
  * in case of error.
  *
- * This function reads data from a FILE stream and parses it using a
- * simple one-way, non-recursive state machine.
+ * This function reads data  from a FILE  stream  and  parses it using a
+ * *simple* one-way, non-recursive state machine.
+ *
+ * Recursiveness is acomplished  by  the use of a helper function called
+ * 'new_gpn_child', which does  so  due  to  the recursive nature of the
+ * GPNode structure. The parser only knows the current character (input)
+ * and  the  current node (plus  the  root). New nodes are added when an
+ * opening tag is detected, and a step-to-parent is performed  when  the
+ * matching pair is found. If any error ocurrs, we simply break Postel's
+ * Law (Be conservative  in  what you  do; be liberal in what you accept
+ * from others) and return NULL.
+ *
  */
 gpnode_p
 parse(FILE *stream, int *lp, int *cp)
@@ -251,13 +368,13 @@ parse(FILE *stream, int *lp, int *cp)
      * worst-case complexity of this function, but only for >16 char
      * words. */
     while ((input = fgetc(stream)) != EOF){
+
         /* Count lines and cols. */
         if(input == '\n'){
             col = 0;
             line++;
         } else
             col++;
-
 
         /* Main dispatcher -- Input (and not state) driven */
         switch(input){
@@ -269,13 +386,18 @@ parse(FILE *stream, int *lp, int *cp)
                 } else {
                     /* We check if the buffer holds any non-whitespace
                      * character, which would mean we're parsing a
-                     * non-standard file and we should complain. */
+                     * non-standard file and we should complain.
+                     *
+                     * endtag is not really the endtag, it's used just
+                     * as a temporary buffer. Disregard its name. */
                     endtag = strpop(&context);
                     if (endtag != NULL){
                         free(endtag);
                         CLEANUP
                     }
                 }
+                /* We found an opening tag DELIMITER, so we have to
+                 * change the state to STAG to retrieve the tag text. */
                 if (state == WHITESPACE || state == DATA){
                     state = STAG;
                 } else {
@@ -284,6 +406,11 @@ parse(FILE *stream, int *lp, int *cp)
                 break;
 
             case '/':
+                /* In case the character right next to an opening tag
+                 * delimiter is '/', switch to ETAG. Otherwise, if we're
+                 * inside ETAG we just call it a day and free everything
+                 * up. And if we're in Whitespace or Data, push it to
+                 * the buffer. */
                 if (state == STAG){
                     state = ETAG;
                 } else if (state == ETAG){
@@ -294,10 +421,18 @@ parse(FILE *stream, int *lp, int *cp)
                 break;
 
             case '>':
+                /* A closing delimiter. We should check whether we are
+                 * inside a closing tag or an opening tag. Anyway, set
+                 * the state to Whitespace. */
                 if (state == ETAG){
+                    /* When inside the trailing tag, push the buffer and
+                     * compare it to the node name. If they differ it
+                     * means someone did a bad job when writing the xml */
                     endtag = strpop(&context);
                     if (gpn_cmp_tag(node, endtag)){
                         free(endtag);
+                        /* Check if we're in the root node or we have
+                         * a parent, in which case we should switch. */
                         if (gpn_parent(node) == NULL){
                             return node;
                         } else {
@@ -308,6 +443,7 @@ parse(FILE *stream, int *lp, int *cp)
                         CLEANUP
                     }
                 } else if (state == STAG){
+                    /* We're in a starting tag, so let's create a node! */
                     node = new_gpn_child(node);
                     if (node == NULL){
                         CLEANUP
@@ -319,13 +455,16 @@ parse(FILE *stream, int *lp, int *cp)
                 break;
 
             default:
+                /* Ignore starting whitespace. Who put it there anyway?
+                 * Also, convert \n to ' '*/
+                if (input == '\n') input = ' ';
                 if(isspace(input) && input != 0){
                     if (state != WHITESPACE)
                         strappend(input, &context);
                 } else if (input != 0){
                     if (state == WHITESPACE)
                         state = DATA;
-                    strappend(input, &context);
+                        strappend(input, &context);
                 }
         }
 
@@ -335,6 +474,16 @@ parse(FILE *stream, int *lp, int *cp)
     #undef CLEANUP
 }
 
+
+/**
+ * @brief Save-to-disk function
+ *
+ * @param stream Stream to print contents to.
+ * @param root Root node to start walking from.
+ *
+ * Note this is a recursive function, so be careful with deeply-nested
+ * nodes.
+ */
 int
 gpn_to_file(FILE *stream, gpnode_p root)
 {

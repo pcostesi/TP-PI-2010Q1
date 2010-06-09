@@ -56,8 +56,9 @@ typedef struct Layer * layer;
 
 #define SCR_DRAW_MARGINS 2
 #define SCR_DRAW_TITLE 8
-#define SCR_AUTO_WARP 1
+#define SCR_AUTO_WRAP 1
 #define SCR_HIDDEN 4
+#define SCR_NO_AUTO_RESIZE 16
 #define STD_HEIGHT 25
 #define STD_WIDTH 80
 #define ENV_HEIGHT (getenv("LINES") == NULL ? STD_HEIGHT : atoi(getenv("LINES")))
@@ -76,7 +77,8 @@ void setMode(layer, int);
 layer draw(layer, const char **);
 void update(screen, layer *);
 void absMoveLayer(layer, int, int);
-layer setText(layer, int, const char *);
+layer setText(layer, int, int, const char *);
+layer setNumber(layer l,int x, int y, unsigned int i);
 
 void endscr(screen);
 void freeLayer(layer);
@@ -87,6 +89,10 @@ char * gauge(char *, size_t, size_t);
 layer gaugeWidget(const char *, size_t);
 void gaugeWidgetUpdate(layer, size_t);
 
-layer vmenu(layer l, const char **);
+layer vmenu(layer, const char *, const char **);
 
+layer idxtext(layer, int, const char *);
+layer text(layer, const char *);
+
+int getScreenDimensions(screen, int *, int *);
 #endif

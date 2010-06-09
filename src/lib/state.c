@@ -196,6 +196,8 @@ load_character(gpnode_p node)
                 c->name = dupstr(gpn_get_content(node));
             } else if (gpn_cmp_tag(node, "HP")){
                 c->HP = atoi(gpn_get_content(node));
+            } else if (gpn_cmp_tag(node, "MaxHP")){
+                c->maxHP = atoi(gpn_get_content(node));
             } else if (gpn_cmp_tag(node, "RoomID")){
                 c->roomID = atoi(gpn_get_content(node));
             } else if (gpn_cmp_tag(node, "ProfessionID")){
@@ -221,6 +223,10 @@ save_character(logbook book)
     node = new_gpn_child(character);
     gpn_set_tag(node, dupstr("HP"));
     gpn_set_content(node, int2str(book->player->HP));
+    
+    node = new_gpn_child(character);
+    gpn_set_tag(node, dupstr("MaxHP"));
+    gpn_set_content(node, int2str(book->player->maxHP));
 
     node = new_gpn_child(character);
     gpn_set_tag(node, dupstr("RoomID"));
@@ -425,6 +431,20 @@ character_t *
 getCharacter(logbook book)
 {
     return book->player;
+}
+
+character_t *
+createCharacter(const char * name)
+{
+    character_t * player = malloc(sizeof(character_t));
+    if (player != NULL){
+        player->name = dupstr(name);
+        player->HP = -1;
+        player->maxHP = -1;
+        player->roomID = -1;
+        player->potions = -1;
+    }
+    return player;
 }
 
 #endif

@@ -65,5 +65,6 @@ void            save_state(game_t *, logbook, const char *);
 game_t *            load_state(const char *, logbook);
 void            setCharacter(logbook, character_t *);
 character_t *   getCharacter(logbook);
+character_t * createCharacter(const char *);
 
 #endif
