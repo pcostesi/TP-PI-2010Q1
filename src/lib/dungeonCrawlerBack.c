@@ -69,16 +69,14 @@ int
 drinkPotion(character_t *player)
 {
   int restored;
-  if(player->potions == 0)
-    return -1;
-  else
+  if(player->potions > 0)
   {
     restored = (player->maxHP - player->HP) * 0.5 ;
     player->potions--;
     player->HP += restored;
     return restored;
   }
-  return;
+  return -1;
 }
 
 
@@ -90,7 +88,7 @@ getPotion(character_t *player)
   if(chance > ((float)(rand())/RAND_MAX )*100)
   {
     player->potions++;
-    printf("The enemy has droped a healing potion that you could use\n\n");
+    return player->potions;
   }
-  return;
+  return 0;
 }

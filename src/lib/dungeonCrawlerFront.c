@@ -33,16 +33,15 @@ void pack(GUI g)
 void info(GUI g, const char *s)
 {
     layer l = LAYER(g, DIALOG);
-    setMode(l, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE);
-    centerText(l, s);
-    draw(l, \
-        (const char *[]){ \
-        "", \
+    static const char *m[] = { \
+            "", \
             "  /\\", \
             " /!!\\", \
             " ----", \
-        NULL}
-        );
+            NULL};
+    setMode(l, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE);
+    centerText(l, s);
+    draw(l, m);
     pack(g);
     PAUSE;
     setMode(l, SCR_HIDDEN);
@@ -55,6 +54,7 @@ optMenu(GUI g, const char *t, const char ** opts )
     int nopts = 0, n, exit = 0;
     while (opts[nopts++] != NULL);
     setMode(LAYER(g, MENU), SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE | SCR_NO_AUTO_RESIZE);
+    setMode(LAYER(g, DIALOG), SCR_HIDDEN);
     vmenu(LAYER(g, MENU), t, opts);
     pack(g);
     printf("\n");
@@ -65,7 +65,8 @@ optMenu(GUI g, const char *t, const char ** opts )
             CLEAN_BUFFER;
             info(g, "Incorrect data type (a number is required)");
         }
-        else if (n > 0 && n <= nopts) {
+        else if (n > 0 && n < nopts) {
+            CLEAN_BUFFER;
             exit = 1;
         } else {
             CLEAN_BUFFER;
@@ -160,6 +161,7 @@ character_t * avatarNamescreen(GUI g)
     printf("\n"); /* Compensate for matrix cursor alignment */
     getName(name, MAX_INPUT);
     player = createCharacter(name);
+    setMode(dialogL, SCR_HIDDEN);
     return player;
 }
 
@@ -193,7 +195,7 @@ chooseProfessionScreen(GUI g, character_t *player, game_t *currentGame)
         int i = 0, aux;
         char t[141];
         layer life = LAYER(g, HEALTHBAR);
-        layer dialog = LAYER(g, DIALOG);
+        layer dialogL = LAYER(g, DIALOG);
         /* Hackish workaround to get a menu. We make an array of char pointers to already allocated pointers */
         const char ** opts = calloc(sizeof(char *), currentGame->professions_size + 1);
         for (i = 0; i < currentGame->professions_size; i++){
@@ -203,7 +205,7 @@ chooseProfessionScreen(GUI g, character_t *player, game_t *currentGame)
                 opts[i] = NULL;
         }
         opts[i] = NULL;
-        sprintf(t, "%s, you may choose among this professions:", player->name);
+        sprintf(t, "%s, you may choose among these professions:", player->name);
         aux = optMenu(g, t, opts);
         free(opts);
         player->professionID = currentGame->professions[aux]->ID;
@@ -213,7 +215,7 @@ chooseProfessionScreen(GUI g, character_t *player, game_t *currentGame)
         setMode(life, SCR_DRAW_MARGINS | SCR_DRAW_TITLE);
         setGaugeBarName(life, player->name);
         sprintf(t, "%s, you have chosen to be a %s. Your initial health points are %d%c",player->name, currentGame->professions[aux]->name, player->HP, 0);
-        text(dialog, t);
+        text(dialogL, t);
 
         pack(g);
         PAUSE;
@@ -251,7 +253,8 @@ setupNormalLayout(GUI g)
 int
 combat(GUI g, character_t *player, enemy_t *enemy, profession_t *profession, game_t * currentGame, logbook log)
 {
-    int winner, turn, hit, enemyHP, fullEnemyHP, minDP, maxDP;
+    int ret = -1, turn, hit, enemyHP, fullEnemyHP;
+    int dp[2];
     layer enemyL = LAYER(g, ENEMYBAR);
     layer health = LAYER(g, HEALTHBAR);
     layer combatlog = LAYER(g, COMBATLOG);
@@ -259,22 +262,23 @@ combat(GUI g, character_t *player, enemy_t *enemy, profession_t *profession, gam
     layer dialog = LAYER(g, DIALOG);
     float starter = ((float)(rand())/(RAND_MAX));
     char message[201];
+
     setMode(combatlog, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_NO_AUTO_RESIZE | SCR_DRAW_TITLE);
     setMode(health, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_NO_AUTO_RESIZE | SCR_DRAW_TITLE);
     setMode(enemyL, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_NO_AUTO_RESIZE | SCR_DRAW_TITLE);
     setMode(dialog, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_NO_AUTO_RESIZE | SCR_DRAW_TITLE);
     setMode(description, SCR_HIDDEN);
-
-    getEnemyMinAndMaxDPByProfession(currentGame, enemy, profession, &minDP, &maxDP);
     setTitle(enemyL, enemy->name);
     gaugeWidgetUpdate(enemyL, 100);
+
+    getEnemyMinAndMaxDPByProfession(currentGame, enemy, profession, dp);
 
     starter < 0.5 ? (turn = 0) : (turn = 1);
     enemyHP = (enemy->minHP + ( (float)(rand())/RAND_MAX ) * (enemy->maxHP - enemy->minHP));
     fullEnemyHP = enemyHP;
 
     sprintf(message, "In the room you encounter a %s, who isn't willing"\
-                     " to let you pass. He has %d HP \n", \
+                     " to let you pass. He has %d HP", \
                      enemy->name, enemyHP);
     info(g, message);
 
@@ -291,11 +295,11 @@ combat(GUI g, character_t *player, enemy_t *enemy, profession_t *profession, gam
                 hit = damageRoll(profession->maxDP, profession->minDP);
                 enemyHP -= hit;
                 if (enemyHP < 0) enemyHP = 0;
-                sprintf(message, "%s has been hit for %d, leaving him with %d health point remaining.\n \nPlease press enter to continue.", enemy->name, hit, enemyHP);
+                sprintf(message, "%s has been hit for %d, leaving him with %d health points remaining.\n \nPlease press enter to continue.", enemy->name, hit, enemyHP);
             }
             else
             {
-                hit = damageRoll(maxDP, minDP);
+                hit = damageRoll(dp[0], dp[1]);
                 player->HP -= hit;
                 if (player->HP < 0) player->HP = 0;
                 sprintf(message, "%s has been hit for %d, leaving him with %d health point remaining. \n \nPlease press enter to continue.", player->name, hit, player->HP);
@@ -308,20 +312,25 @@ combat(GUI g, character_t *player, enemy_t *enemy, profession_t *profession, gam
             PAUSE;
             turn = (turn + 1) % 2;
     }
-    setMode(combatlog, SCR_HIDDEN);
-    setMode(enemyL, SCR_HIDDEN);
-    setMode(LAYER(g, DESCRIPTION), SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE | SCR_NO_AUTO_RESIZE);
 
     if (player->HP <= 0)
     {
-        printf("You have been defeated, and thus have dishonored your family \n");
-                return DEAD;
+        sprintf(message, "You have been defeated, and thus have dishonored your family");
+                ret = DEAD;
     }
     else
     {
-        printf("You have crushed another foolish enemy thata got in yur way \n\n");
-                return ALIVE;
+        sprintf(message, "You have crushed another foolish enemy that got in yur way");
+                ret = ALIVE;
     }
+    logmsg(log, strlen(message) + 1, message);
+    centerText(LAYER(g, COMBATLOG), message);
+    pack(g);
+    PAUSE;
+    setMode(combatlog, SCR_HIDDEN);
+    setMode(enemyL, SCR_HIDDEN);
+    setMode(LAYER(g, DESCRIPTION), SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE | SCR_NO_AUTO_RESIZE);
+    return ret;
 }
 
 
@@ -331,14 +340,13 @@ returnig if player is dead or alive*/
 int
 enterRoom(GUI g, character_t *player, room_t *actualRoom, game_t *currentGame, logbook log)
 {
-    int status = ALIVE, i = 0;
+    int status = ALIVE, i;
     layer description = LAYER(g, DESCRIPTION);
     layer menuL = LAYER(g, MENU);
     player->roomID = actualRoom->ID;
     enemy_t * enemy;
 
     setMode(LAYER(g, DIALOG), SCR_HIDDEN);
-
     setMode(description, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE);
     text(description, actualRoom->description);
     setTitle(description, actualRoom->name);
@@ -347,12 +355,14 @@ enterRoom(GUI g, character_t *player, room_t *actualRoom, game_t *currentGame, l
 
     if (actualRoom->visited == 0)
     {
-        while( status == ALIVE && i < actualRoom->enemies_size)
+        for(i = actualRoom->enemies_size - 1; status == ALIVE && i >= 0; i--)
         {
-        enemy = getEnemyByID(currentGame, actualRoom->enemy_ids[i]);
+            enemy = getEnemyByID(currentGame, actualRoom->enemy_ids[i]);
             status = combat(g, player, enemy, getProfessionByID(currentGame, player->professionID), currentGame, log);
-            i++;
-        getPotion(player);
+            if (getPotion(player)){
+                info(g, "The enemy has dropped a potion!");
+            }
+            actualRoom->enemies_size--;
         }
         actualRoom->visited = 1;
     }

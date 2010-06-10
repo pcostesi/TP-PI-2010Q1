@@ -765,15 +765,15 @@ getProfessionIndexByID(game_t * game, int id)
  * @return
  */
 int
-getEnemyMinAndMaxDPByProfession(game_t * g, enemy_t * e, profession_t * p, int *min, int *max)
+getEnemyMinAndMaxDPByProfession(game_t * g, enemy_t * e, profession_t * p, int dp[])
 {
     int err = RETURN_ERR;
     int idx;
 
-    if (g != NULL && e != NULL && p != NULL && min != NULL &&\
-            max != NULL && (idx = getProfessionIndexByID(g, p->ID)) != NO_IDX){
-        *min = e->minDP[idx];
-        *max = e->maxDP[idx];
+    if (g != NULL && e != NULL && p != NULL && dp != NULL \
+        && (idx = getProfessionIndexByID(g, p->ID)) != NO_IDX){
+        dp[0] = e->minDP[idx];
+        dp[1] = e->maxDP[idx];
         err = RETURN_OK;
     }
     return err;

@@ -124,5 +124,5 @@ room_t *             getRoomByID(game_t *, int);
 profession_t *             getProfessionByID(game_t *, int);
 int             getProfessionIndexByID(game_t *, int);
 int             getEnemyMinAndMaxDPByProfession(game_t *, enemy_t *, \
-                    profession_t *, int *, int *);
+                    profession_t *, int *);
 #endif
