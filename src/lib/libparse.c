@@ -79,7 +79,7 @@ gpn_init(gpnode_p node){
         node->prev = node;
         node->value = NULL;
         node->name = NULL;
-        node->next = NULL;
+        node->parent = NULL;
         node->child = NULL;
     }
     return node;
@@ -88,7 +88,7 @@ gpn_init(gpnode_p node){
 /**
  * @brief
  *
- * @return 
+ * @return
  * */
 gpnode_p
 gpn_alloc(void)
@@ -469,6 +469,9 @@ parse(FILE *stream, int *lp, int *cp)
         }
 
     }
+
+    /* Never reached -- Either CLEANUP returns NULL or case '>' returns
+     * the node. */
     return root;
 
     #undef CLEANUP

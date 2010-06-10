@@ -95,4 +95,5 @@ layer idxtext(layer, int, const char *);
 layer text(layer, const char *);
 
 int getScreenDimensions(screen, int *, int *);
+void centerText(layer, const char *);
 #endif

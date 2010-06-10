@@ -64,7 +64,7 @@ typedef struct Layer{
     size_t x, y;
     int x_offset, y_offset;
     int mode;
-    char * name;
+    const char * name;
 } layer_t;
 
 
@@ -105,7 +105,7 @@ drawTitle(screen scr, layer l)
     #define _SET_BUFFER(A) if (itr_x++ >= 0 && itr_x < x_bound) \
                                 scr->buffer[itr_y][itr_x] = (A)
     int itr_x, itr_y;
-    char * t = NULL;
+    const char * t = NULL;
     int x_bound = MIN(l->x + l->x_offset, scr->x);
 
     /* Draw title */
@@ -177,7 +177,7 @@ drawLayer(screen scr, layer l)
 
     int y_boundary = MIN(l->y + l->y_offset, scr->y);
     int x_boundary = MIN(l->x + l->x_offset, scr->x);
-    
+
     if (!(l->mode & SCR_HIDDEN)){
         for (itr_y = l->y_offset; itr_y < y_boundary; itr_y++){
             for (itr_x = l->x_offset; itr_x < x_boundary; itr_x++){
@@ -208,7 +208,11 @@ bufferToStream(screen scr)
     fputc('\n', scr->stream);
     for (itr_y = 0; itr_y < scr->y; itr_y++){
         for (itr_x = 0; itr_x < scr->x; itr_x++){
-            fputc(scr->buffer[itr_y][itr_x], scr->stream);
+            /* Avoid problematic chars in non-ASCII encodings */
+            if (128 > (unsigned char) scr->buffer[itr_y][itr_x])
+                fputc(scr->buffer[itr_y][itr_x], scr->stream);
+            else
+                fputc(' ', scr->stream);
         }
         if (itr_y != scr->y - 1) fputc('\n', scr->stream);
     }
@@ -452,8 +456,11 @@ endscr(screen scr)
 void
 setTitle(layer l, const char * c)
 {
+    /*
     l->name = malloc(strlen(c) + 1);
     strcpy(l->name, c);
+    */
+    l->name = c;
 }
 
 /**
@@ -466,7 +473,7 @@ setTitle(layer l, const char * c)
 void
 setMode(layer l, int i)
 {
-    l->mode = i; 
+    l->mode = i;
 }
 
 /**
@@ -481,8 +488,6 @@ freeLayer(layer l)
 {
     if (l != NULL){
         freeMatrix(l->matrix, l->y);
-        if (l->name != NULL)
-            free(l->name);
         free(l);
     }
 }
@@ -556,7 +561,7 @@ is_valid_char(char c)
 {
     int ret = 0;
     /* Skip problematic characters */
-    if (!iscntrl(c) && c != '\n' && c != '\t' && c < 128 && c >= 0)
+    if (!iscntrl(c) && c != '\n' && c != '\t' && (unsigned) c < 128)
         ret = 1;
     return ret;
 }
@@ -618,7 +623,7 @@ resizeLayer(layer l, size_t x, size_t y)
         l->x = x;
     }
     return l;
-    
+
 }
 
 /**
@@ -667,17 +672,16 @@ void
 centerText(layer l, const char * t)
 {
     char * t2 = dupstr(t);
-    char * tok = t2;
+    char * tok;
     int insertFrom = 0, margin = 0, lines = 1, itr = 0;
-    while (tok[itr] != 0)
-        if (tok[itr++] == '\n')
+    while (t2[itr] != 0)
+        if (t2[itr++] == '\n')
             lines++;
     insertFrom = (l->y - lines) / 2;
     zeroOut(l->matrix, l->x, l->y);
-    while((tok = strtok(t2, "\n")) != NULL){
+    for (tok = strtok(t2, "\n"); tok != NULL; tok = strtok(NULL, "\n")){
         margin = (l->x - strlen(tok)) / 2;
         setText(l, margin, insertFrom++, tok);
-        t2 = NULL;
     }
     free(t2);
 }

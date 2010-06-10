@@ -16,7 +16,6 @@
 #include "libcrawl.h"
 #include "state.h"
 #include "screen.h"
-#include "getnum.h"
 #include <math.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -24,7 +23,6 @@
 #include <time.h>
 
 int getName(char name[], int len);
-int combat(character_t *player, enemy_t *enemy, profession_t *profession, game_t * game);
 int damageRoll(int max, int min);
 int drinkPotion(character_t *player);
 int getPotion(character_t *player);

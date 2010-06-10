@@ -223,7 +223,7 @@ save_character(logbook book)
     node = new_gpn_child(character);
     gpn_set_tag(node, dupstr("HP"));
     gpn_set_content(node, int2str(book->player->HP));
-    
+
     node = new_gpn_child(character);
     gpn_set_tag(node, dupstr("MaxHP"));
     gpn_set_content(node, int2str(book->player->maxHP));
@@ -359,8 +359,8 @@ logmsg(logbook book, size_t size, const char * fmt, ...)
 
     if (book != NULL){
         new_entry = malloc(sizeof(log_entry_t));
-
         action = malloc(size);
+        if (action == NULL) return NULL;
         howmany = vsprintf(action, fmt, vargs);
         if (howmany != size - 1){
             free(action);
