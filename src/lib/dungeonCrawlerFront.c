@@ -222,9 +222,10 @@ chooseProfessionScreen(GUI g, character_t *player, game_t *currentGame)
         setMode(life, SCR_DRAW_MARGINS | SCR_DRAW_TITLE);
         setGaugeBarName(life, player->name);
         sprintf(t, "%s, you have chosen to be a %s. Your initial health points are %d%c",player->name, currentGame->professions[aux]->name, player->HP, 0);
+        setMode(dialogL, SCR_NORMAL);
         text(dialogL, t);
         pack(g);
-        
+        setMode(dialogL, SCR_HIDDEN);
         PAUSE;
 }
 
@@ -287,9 +288,10 @@ combat(GUI g, character_t *player, enemy_t *enemy, profession_t *profession, gam
     starter < 0.5 ? (turn = 0) : (turn = 1);
     enemyHP = (enemy->minHP + ( (float)(rand())/RAND_MAX ) * (enemy->maxHP - enemy->minHP));
     fullEnemyHP = enemyHP;
-
-    sprintf(message, "In the room you encounter a %s, who isn't willing"\
-                     " to let you pass. He has %d HP", \
+	
+	
+    text(LAYER(g, COMBATLOG), "");
+    sprintf(message, "In the room you encounter a %s.\n(Who is not willing to let you pass...)\nHe has %d HP", \
                      enemy->name, enemyHP);
     info(g, message);
 
@@ -450,6 +452,7 @@ menu(GUI g, game_t **currentGame, character_t *player, logbook log)
                 if (drinkPotion(player) == -1){
                     info(g, "But you're out of potions!");
                 } else {
+					gaugeWidgetUpdate(LAYER(g, HEALTHBAR), player->HP * 100 / player->maxHP);
                     sprintf(message, "Ok! Now you have %d Health points and %d Potions left.", player->HP, player->potions);
                     info(g, message);
                 }
@@ -458,10 +461,9 @@ menu(GUI g, game_t **currentGame, character_t *player, logbook log)
             case 3 :
                 setMode(dialogL, SCR_NORMAL);
                 setMode(LAYER(g, DESCRIPTION), SCR_HIDDEN);
-                centerText(dialogL, "Type the name of the file without extension and press ENTER");
+                centerText(dialogL, "Type the name of the file and press ENTER");
                 pack(g);
                 getName(name, MAX_INPUT);
-                strcat(name, ".xml");
                 save_state(*currentGame, log, name );
                 setMode(dialogL, SCR_HIDDEN);
                 setMode(LAYER(g, DESCRIPTION), SCR_NORMAL);
@@ -478,12 +480,13 @@ menu(GUI g, game_t **currentGame, character_t *player, logbook log)
                 return DEAD;
                 break;
             case 6 :
-                setMode(LAYER(g, DESCRIPTION), 0);
+                setMode(LAYER(g, DESCRIPTION), SCR_HIDDEN);
                 setMode(dialogL, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE);
                 centerText(dialogL, "Type the name of the file and press ENTER");
                 pack(g);
                 getName(name, MAX_INPUT);
                 log_to_disk(log, name);
+                info(g, "Dump saved");
                 setMode(dialogL, SCR_HIDDEN);
                 setMode(LAYER(g, DESCRIPTION), SCR_NORMAL);
                 break;

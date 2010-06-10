@@ -22,7 +22,6 @@
 #include <string.h>
 #include <time.h>
 
-int getName(char name[], int len);
 int damageRoll(int max, int min);
 int drinkPotion(character_t *player);
 int getPotion(character_t *player);

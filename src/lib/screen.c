@@ -687,7 +687,10 @@ centerText(layer l, const char * t)
     zeroOut(l->matrix, l->x, l->y);
     for (tok = strtok(t2, "\n"); tok != NULL; tok = strtok(NULL, "\n")){
         margin = (l->x - strlen(tok)) / 2;
-        setText(l, margin, insertFrom++, tok);
+        if (margin < 0)
+			margin = 0;
+		setText(l, margin, insertFrom++, tok);
+			
     }
     free(t2);
 }
