@@ -188,7 +188,7 @@
 		  else
 			currentGame = load_state(fileName, log);
 	      if(currentGame == NULL){
-		  centerText(dialog, "Invalid file or corrupt data. Make sure you typed it right! NOOBHEAD!");
+			centerText(dialog, "Invalid file or corrupt data. \nMake sure you typed it right!");
 	      }
 	    } while( currentGame == NULL);
 	    return currentGame;
@@ -256,7 +256,7 @@
 	    absMoveLayer(menuL, x / 2 + 2, 5);
 	    setTitle(menuL, "Your options...");
 	    setMode(menuL, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE | SCR_NO_AUTO_RESIZE);
-	    
+
 	    setMode(LAYER(g, BACKGROUND), SCR_HIDDEN);
 
 	}
@@ -288,8 +288,7 @@
 	    starter < 0.5 ? (turn = 0) : (turn = 1);
 	    enemyHP = (enemy->minHP + ( (float)(rand())/RAND_MAX ) * (enemy->maxHP - enemy->minHP));
 	    fullEnemyHP = enemyHP;
-		
-		
+
 	    text(LAYER(g, COMBATLOG), "");
 	    sprintf(message, "In the room you encounter a %s.\n(Who is not willing to let you pass...)\nHe has %d HP", \
 			     enemy->name, enemyHP);
@@ -313,7 +312,7 @@
 		    else
 		    {
 			hit = damageRoll(dp[0], dp[1]);
-			player->HP -= 3;
+			player->HP -= hit;
 			if (player->HP < 0) player->HP = 0;
 			sprintf(message, "%s has been hit for %d, leaving him with %d health point remaining. \n \nPlease press enter to continue.", player->name, hit, player->HP);
 		    }
@@ -358,6 +357,7 @@
 	    layer menuL = LAYER(g, MENU);
 	    player->roomID = actualRoom->ID;
 	    enemy_t * enemy;
+	    char message[141];
 
 	    setMode(LAYER(g, DIALOG), SCR_HIDDEN);
 	    setMode(description, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE);
@@ -365,7 +365,8 @@
 	    text(description, actualRoom->description);
 	    setTitle(description, actualRoom->name);
 
-	    /*pack(g);*/
+	    sprintf(message, "You're standing in room %s (%d)", actualRoom->name, actualRoom->ID);
+	    logmsg(log, strlen(message) + 1, message);
 
 	    if (actualRoom->visited == 0)
 	    {

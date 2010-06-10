@@ -290,7 +290,7 @@ zeroOut(char ** m, size_t x, size_t y)
  * @return
  */
 screen
-initscr(FILE * stream, size_t x, size_t y)
+	initscr(FILE * stream, size_t x, size_t y)
 {
     screen scr = malloc(sizeof(screen_t));
     if (scr != NULL){
@@ -687,7 +687,7 @@ centerText(layer l, const char * t)
     zeroOut(l->matrix, l->x, l->y);
     for (tok = strtok(t2, "\n"); tok != NULL; tok = strtok(NULL, "\n")){
         margin = (l->x - strlen(tok)) / 2;
-        if (margin < 0)
+		if (margin <= 0)
 			margin = 0;
 		setText(l, margin, insertFrom++, tok);
 			
