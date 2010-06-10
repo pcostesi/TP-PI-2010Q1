@@ -74,7 +74,6 @@ optMenu(GUI g, const char *t, const char ** opts )
         }
     } while (!exit);
     setMode(LAYER(g, MENU), SCR_HIDDEN);
-    pack(g);
     return n - 1;
 }
 
@@ -151,7 +150,7 @@ void splashscreen(GUI g)
 character_t * avatarNamescreen(GUI g)
 {
     character_t * player;
-    char name[MAX_INPUT + 1];
+    char name[MAX_INPUT];
     layer dialogL = LAYER(g, DIALOG);
 
     setMode(dialogL, SCR_DRAW_MARGINS | SCR_DRAW_TITLE | SCR_AUTO_WRAP);
@@ -166,23 +165,30 @@ character_t * avatarNamescreen(GUI g)
 }
 
 
-game_t * askForGame(GUI g, char * fileName)
+game_t * askForGame(GUI g, char * fileName, logbook log)
 {
     game_t * currentGame = NULL;
     layer dialog = LAYER(g, DIALOG);
     setMode(LAYER(g, BACKGROUND), SCR_HIDDEN);
     setMode(dialog, SCR_DRAW_MARGINS | SCR_DRAW_TITLE | SCR_AUTO_WRAP);
 
-    centerText(dialog, "Insert the filename without extension and press INTRO");
+	/* We do this in the name of lazyness. instead of copy-pasting the function we 
+	 * reuse it like good budgetless engineers. */
+	if (log == NULL)
+		centerText(dialog, "Insert the FULL filename (EXT. INCL.) and press INTRO");
+	else
+		centerText(dialog, "Insert the savestate name and press INTRO");
     do
     {
       pack(g);
       printf("\n"); /* Compensate for cursor position */
       getName(fileName, MAX_INPUT);
-      strcat(fileName, ".xml");
-      currentGame = load_game(fileName);
+      if (log == NULL)
+		currentGame = load_game(fileName);
+	  else
+		currentGame = load_state(fileName, log);
       if(currentGame == NULL){
-          centerText(dialog, "Invalid file or corrupt data. Make sure you typed it right!");
+          centerText(dialog, "Invalid file or corrupt data. Make sure you typed it right! NOOBHEAD!");
       }
     } while( currentGame == NULL);
     return currentGame;
@@ -211,13 +217,14 @@ chooseProfessionScreen(GUI g, character_t *player, game_t *currentGame)
         player->professionID = currentGame->professions[aux]->ID;
         player->HP = currentGame->professions[aux]->minHP + ( (float)(rand())/RAND_MAX ) *
           (currentGame->professions[aux]->maxHP - currentGame->professions[aux]->minHP);
+        player->maxHP = player->HP;
         gaugeWidgetUpdate(life, 100);
         setMode(life, SCR_DRAW_MARGINS | SCR_DRAW_TITLE);
         setGaugeBarName(life, player->name);
         sprintf(t, "%s, you have chosen to be a %s. Your initial health points are %d%c",player->name, currentGame->professions[aux]->name, player->HP, 0);
         text(dialogL, t);
-
         pack(g);
+        
         PAUSE;
 }
 
@@ -225,13 +232,14 @@ void
 setupNormalLayout(GUI g)
 {
     layer description = LAYER(g, DESCRIPTION);
-    layer menu = LAYER(g, MENU);
+    layer menuL = LAYER(g, MENU);
     layer combatlog = LAYER(g, COMBATLOG);
     int x, y;
 
     getScreenDimensions(g->scr, &x, &y);
 
     setMode(LAYER(g, DIALOG), SCR_HIDDEN);
+    /* Queen - A kind of Magic */
     resizeLayer(LAYER(g, DIALOG), x * 0.75, y * 0.25);
     absMoveLayer(LAYER(g, DIALOG), x * 0.125, y * 0.375);
 
@@ -243,10 +251,13 @@ setupNormalLayout(GUI g)
     absMoveLayer(combatlog, 1, y / 2 - 1);
     setMode(combatlog, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE | SCR_HIDDEN);
 
-    resizeLayer(menu, x / 2 - 3, y - 6);
-    absMoveLayer(menu, x / 2 + 2, 5);
-    setTitle(menu, "Your options...");
-    setMode(menu, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE | SCR_NO_AUTO_RESIZE);
+    resizeLayer(menuL, x / 2 - 3, y - 6);
+    absMoveLayer(menuL, x / 2 + 2, 5);
+    setTitle(menuL, "Your options...");
+    setMode(menuL, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE | SCR_NO_AUTO_RESIZE);
+    
+    setMode(LAYER(g, BACKGROUND), SCR_HIDDEN);
+
 }
 
 /*Simulates the combat between the player and any posible enemy*/
@@ -300,7 +311,7 @@ combat(GUI g, character_t *player, enemy_t *enemy, profession_t *profession, gam
             else
             {
                 hit = damageRoll(dp[0], dp[1]);
-                player->HP -= hit;
+                player->HP -= 3;
                 if (player->HP < 0) player->HP = 0;
                 sprintf(message, "%s has been hit for %d, leaving him with %d health point remaining. \n \nPlease press enter to continue.", player->name, hit, player->HP);
             }
@@ -348,10 +359,11 @@ enterRoom(GUI g, character_t *player, room_t *actualRoom, game_t *currentGame, l
 
     setMode(LAYER(g, DIALOG), SCR_HIDDEN);
     setMode(description, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE);
+    setMode(menuL, SCR_HIDDEN);
     text(description, actualRoom->description);
     setTitle(description, actualRoom->name);
 
-    pack(g);
+    /*pack(g);*/
 
     if (actualRoom->visited == 0)
     {
@@ -405,13 +417,14 @@ void endgui(GUI g)
 
 /*Displays a menu with the actions that the player can take*/
 int
-menu(GUI g, game_t *currentGame, character_t *player, logbook log)
+menu(GUI g, game_t **currentGame, character_t *player, logbook log)
 {
 
     layer menuL = LAYER(g, MENU);
+    game_t * newGame = NULL;
     layer dialogL = LAYER(g, DIALOG);
     char message[141];
-    char name[MAX_INPUT + 1];
+    char name[MAX_INPUT + 6];
     int aux = 0;
     int flags = 0;
     do
@@ -419,8 +432,8 @@ menu(GUI g, game_t *currentGame, character_t *player, logbook log)
         /* We only need this once */
         static const char * opts[] = {"Switch rooms", \
                                 "Drink a potion", \
-                                "Save Game...", \
-                                "Load Game...", \
+                                "Save State...", \
+                                "Load State...", \
                                 "Quit game", \
                                 "Dump Actions...", \
                                 NULL };
@@ -433,37 +446,49 @@ menu(GUI g, game_t *currentGame, character_t *player, logbook log)
                 return ALIVE;
                 break;
             case 2 :
+                setMode(LAYER(g, DESCRIPTION), SCR_HIDDEN);
                 if (drinkPotion(player) == -1){
                     info(g, "But you're out of potions!");
                 } else {
-                    sprintf(message, "Ok! Now you have %10d Health points and %10d Potions left.", player->HP, player->potions);
+                    sprintf(message, "Ok! Now you have %d Health points and %d Potions left.", player->HP, player->potions);
                     info(g, message);
                 }
+                setMode(LAYER(g, DESCRIPTION), SCR_NORMAL);
                 break;
             case 3 :
-                setMode(dialogL, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE);
+                setMode(dialogL, SCR_NORMAL);
+                setMode(LAYER(g, DESCRIPTION), SCR_HIDDEN);
                 centerText(dialogL, "Type the name of the file without extension and press ENTER");
                 pack(g);
-                getName(name, MAX_INPUT - 4);
+                getName(name, MAX_INPUT);
                 strcat(name, ".xml");
-                save_state(currentGame, log, name );
+                save_state(*currentGame, log, name );
                 setMode(dialogL, SCR_HIDDEN);
+                setMode(LAYER(g, DESCRIPTION), SCR_NORMAL);
                 break;
             case 4 :
+				newGame = askForGame(g, name, log);
+				if (newGame != NULL){
+					free(*currentGame);
+					currentGame = newGame;
+					info(g, "A new state has been loaded");
+				}
                 break;
             case 5 :
                 return DEAD;
                 break;
             case 6 :
+                setMode(LAYER(g, DESCRIPTION), 0);
                 setMode(dialogL, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE);
                 centerText(dialogL, "Type the name of the file and press ENTER");
                 pack(g);
                 getName(name, MAX_INPUT);
                 log_to_disk(log, name);
                 setMode(dialogL, SCR_HIDDEN);
+                setMode(LAYER(g, DESCRIPTION), SCR_NORMAL);
                 break;
             default:
-                info(g, "Are you a monkey or do you have fat fingers? Let's go all over again, boy...");
+                info(g, "C'mon, fat fingers! Type a valid number!");
         }
 
     } while(1);
@@ -526,15 +551,31 @@ main(int argcount, char ** vector_of_strings)
     /* This GUI is inspired on the awesome ncurses, which I would be using if
      * it wasn't for its lack of ANSI-C Compliance. */
     GUI gui = initgui();
-    if (argcount > 1){
-        seed = atoi(vector_of_strings[1]);
-    } else {
-        srand(time(NULL));
-    }
-
+    
     splashscreen(gui);
+    
+    if (argcount == 1)
+	{
+		currentGame = askForGame(gui, fileName, NULL);
+		seed = time(NULL);
+    }
+    else
+    {
+		strcpy(fileName, vector_of_strings[1]);
+		currentGame = load_game(fileName);
+		if (currentGame == NULL) exit(14);
+		if (argcount == 2)
+		{
+			seed = time(NULL);
+		}
+		else
+		{
+			seed = atoi(vector_of_strings[2]);
+		}
+    }
+	srand(seed);
 
-    currentGame = askForGame(gui, fileName);
+    /**/
 
     player = avatarNamescreen(gui);
 
@@ -548,7 +589,7 @@ main(int argcount, char ** vector_of_strings)
     status = enterRoom(gui, player, currentRoom, currentGame, log);
     while( status == ALIVE )
     {
-        status = menu(gui, currentGame, player, log);
+        status = menu(gui, &currentGame, player, log);
         if(status == ALIVE)
         {
             aux = getDoor(gui, currentRoom);

@@ -342,12 +342,11 @@ gpn_get_tag(gpnode_p n)
 gpnode_p
 parse(FILE *stream, int *lp, int *cp)
 {
-    /*
-     * In order not to repeat code and to warn against non-compliant
+    /* In order not to repeat code and to warn against non-compliant
      * files (whatever that is, since there's no formal definition of
      * the file structure -- although anything not resembling xml should
      * make this cry foul), CLEANUP is a macro that handles the error
-     * message and does some pointer-freeing (to be fixed).
+     * message and does some pointer-freeing.
      */
     #define CLEANUP     if (lp != NULL) *lp = line;         \
                         if (cp != NULL) *cp= col - 1;       \
@@ -469,6 +468,7 @@ parse(FILE *stream, int *lp, int *cp)
         }
 
     }
+    CLEANUP
 
     /* Never reached -- Either CLEANUP returns NULL or case '>' returns
      * the node. */

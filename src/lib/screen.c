@@ -319,7 +319,7 @@ newLayer(size_t x, size_t y, int x_offset, int y_offset)
         result->x = x;
         result->x_offset = x_offset;
         result->y_offset = y_offset;
-        result->mode = SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE;
+        result->mode = SCR_NORMAL;
         result->name = NULL;
     }
     return result;
@@ -504,12 +504,18 @@ gauge(char * s, size_t capacity, size_t percentage)
 {
     size_t itr;
     size_t idx2;
-    int idx3;
-    if (capacity < 5 || percentage > 100) return NULL;
+    int insertIdx;
+    if (capacity < 5)
+		return NULL;
     idx2 = (capacity - 4) / 2;
-    idx3 = sprintf(&(s[idx2]), "%d%%", (int) percentage);
+    if (percentage > 100){
+		insertIdx = sprintf(&(s[idx2]), "%d", (int) (percentage / 100));
+		percentage %= 101;
+	} else {
+		insertIdx = sprintf(&(s[idx2]), "%d%%", (int) percentage);
+	}
     for (itr = 0; itr < capacity; itr++){
-        if (itr < idx3 + idx2 && itr >= idx2) {
+        if (itr < insertIdx + idx2 && itr >= idx2) {
         } else if (itr < capacity * percentage / 100 && itr < capacity){
             s[itr] = '=';
         } else {

@@ -59,6 +59,7 @@ typedef struct Layer * layer;
 #define SCR_AUTO_WRAP 1
 #define SCR_HIDDEN 4
 #define SCR_NO_AUTO_RESIZE 16
+#define SCR_NORMAL (SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE)
 #define STD_HEIGHT 25
 #define STD_WIDTH 80
 #define ENV_HEIGHT (getenv("LINES") == NULL ? STD_HEIGHT : atoi(getenv("LINES")))
