@@ -4,88 +4,159 @@
            <HabitacionSalidaID>3</HabitacionSalidaID>
    </PuntosImportantes>
    <Profesiones>
-           <Cantidad>3</Cantidad>
+           <Cantidad>5</Cantidad>
            <Profesion>
-                   <ID>2</ID>
-                   <Nombre>Guerrero</Nombre>
-                   <MinHP>10</MinHP>
-                   <MaxHP>30</MaxHP>
-                   <MinDP>2</MinDP>
-                   <MaxDP>6</MaxDP>
+                   <ID>0</ID>
+                   <Nombre>Archer</Nombre>
+                   <MinHP>20</MinHP>
+                   <MaxHP>26</MaxHP>
+                   <MinDP>5</MinDP>
+                   <MaxDP>8</MaxDP>
            </Profesion>
            <Profesion>
                    <ID>1</ID>
-                   <Nombre>Mago</Nombre>
-                   <MinHP>10</MinHP>
+                   <Nombre>Sorcerer</Nombre>
+                   <MinHP>16</MinHP>
+                   <MaxHP>24</MaxHP>
+                   <MinDP>10</MinDP>
+                   <MaxDP>15</MaxDP>
+           </Profesion>
+           <Profesion>
+                   <ID>2</ID>
+                   <Nombre>Rogue</Nombre>
+                   <MinHP>21</MinHP>
                    <MaxHP>30</MaxHP>
+                   <MinDP>4</MinDP>
+                   <MaxDP>9</MaxDP>
+           </Profesion>
+           <Profesion>
+                   <ID>3</ID>
+                   <Nombre>Knight</Nombre>
+                   <MinHP>28</MinHP>
+                   <MaxHP>38</MaxHP>
                    <MinDP>2</MinDP>
                    <MaxDP>6</MaxDP>
            </Profesion>
            <Profesion>
-                   <ID>0</ID>
-                   <Nombre>Ladron</Nombre>
-                   <MinHP>10</MinHP>
-                   <MaxHP>30</MaxHP>
-                   <MinDP>2</MinDP>
-                   <MaxDP>6</MaxDP>
+                   <ID>4</ID>
+                   <Nombre>Lawyer</Nombre>
+                   <MinHP>180</MinHP>
+                   <MaxHP>380</MaxHP>
+                   <MinDP>1</MinDP>
+                   <MaxDP>1</MaxDP>
            </Profesion>
    </Profesiones>
    <Enemigos>
-           <Cantidad>2</Cantidad>
+           <Cantidad>5</Cantidad>
                 <Enemigo>
                         <ID>0</ID>
-                        <Nombre>Orco salvaje</Nombre>
-                        <MinHP>2</MinHP>
-                        <MaxHP>5</MaxHP>
-                        <MinDP-0>1</MinDP-0>
-                        <MaxDP-0>3</MaxDP-0>
+                        <Nombre>Dijkstra</Nombre>
+                        <MinHP>15</MinHP>
+                        <MaxHP>35</MaxHP>
+                        <MinDP-0>2</MinDP-0>
+                        <MaxDP-0>4</MaxDP-0>
                         <MinDP-1>2</MinDP-1>
                         <MaxDP-1>4</MaxDP-1>
                         <MinDP-2>3</MinDP-2>
                         <MaxDP-2>6</MaxDP-2>
+                        <MinDP-3>2</MinDP-3>
+                        <MaxDP-3>3</MaxDP-3>
+                        <MinDP-4>10</MinDP-4>
+                        <MaxDP-4>25</MaxDP-4>
                 </Enemigo>
-                <Enemigo>
+		<Enemigo>
                         <ID>1</ID>
-                        <Nombre>Orco guerrero</Nombre>
-                        <MinHP>3</MinHP>
+                        <Nombre>-=BUG=-</Nombre>
+                        <MinHP>4</MinHP>
                         <MaxHP>7</MaxHP>
                         <MinDP-0>2</MinDP-0>
-                        <MaxDP-0>5</MaxDP-0>
+                        <MaxDP-0>4</MaxDP-0>
+                        <MinDP-1>2</MinDP-1>
+                        <MaxDP-1>4</MaxDP-1>
+                        <MinDP-2>3</MinDP-2>
+                        <MaxDP-2>6</MaxDP-2>
+                        <MinDP-3>2</MinDP-3>
+                        <MaxDP-3>3</MaxDP-3>
+                        <MinDP-4>6</MinDP-4>
+                        <MaxDP-4>18</MaxDP-4>
+                </Enemigo>
+		<Enemigo>
+                        <ID>2</ID>
+                        <Nombre>Rat</Nombre>
+                        <MinHP>1</MinHP>
+                        <MaxHP>3</MaxHP>
+                        <MinDP-0>1</MinDP-0>
+                        <MaxDP-0>3</MaxDP-0>
                         <MinDP-1>1</MinDP-1>
                         <MaxDP-1>3</MaxDP-1>
-                        <MinDP-2>2</MinDP-2>
+                        <MinDP-2>1</MinDP-2>
+                        <MaxDP-2>3</MaxDP-2>
+                        <MinDP-3>1</MinDP-3>
+                        <MaxDP-3>1</MaxDP-3>
+                        <MinDP-4>4</MinDP-4>
+                        <MaxDP-4>4</MaxDP-4>
+                </Enemigo>
+		<Enemigo>
+                        <ID>3</ID>
+                        <Nombre>Orc</Nombre>
+                        <MinHP>3</MinHP>
+                        <MaxHP>8</MaxHP>
+                        <MinDP-0>1</MinDP-0>
+                        <MaxDP-0>2</MaxDP-0>
+                        <MinDP-1>1</MinDP-1>
+                        <MaxDP-1>3</MaxDP-1>
+                        <MinDP-2>1</MinDP-2>
+                        <MaxDP-2>2</MaxDP-2>
+                        <MinDP-3>1</MinDP-3>
+                        <MaxDP-3>2</MaxDP-3>
+                        <MinDP-4>1</MinDP-4>
+                        <MaxDP-4>5</MaxDP-4>
+                </Enemigo>
+		<Enemigo>
+                        <ID>4</ID>
+                        <Nombre>Goblin</Nombre>
+                        <MinHP>2</MinHP>
+                        <MaxHP>4</MaxHP>
+                        <MinDP-0>1</MinDP-0>
+                        <MaxDP-0>3</MaxDP-0>
+                        <MinDP-1>1</MinDP-1>
+                        <MaxDP-1>2</MaxDP-1>
+                        <MinDP-2>1</MinDP-2>
                         <MaxDP-2>4</MaxDP-2>
+                        <MinDP-3>1</MinDP-3>
+                        <MaxDP-3>1</MaxDP-3>
+                        <MinDP-4>1</MinDP-4>
+                        <MaxDP-4>2</MaxDP-4>
                 </Enemigo>
        </Enemigos>
        <Laberinto>
-                <Cantidad>4</Cantidad>
+                <Cantidad>15</Cantidad>
                 <Habitacion>
                         <ID>0</ID>
-                        <Nombre>Entrada</Nombre>
-                        <Descripcion>Es una habitación relativamente oscura, donde la única
-iluminación es el ténue brillo de unas pocas velas.</Descripcion>
+                        <Nombre>Cell</Nombre>
+                        <Descripcion>You wake from your sleep and find yourself trapped here, in this cold and dark room. The walls are spilled with blood, obvious signs of a carnage carried shortly ago. This, you think, is a Nightmare from Hell.</Descripcion>
                         <Puertas>
                                  <Puerta>
-                                         <Nombre>Dorada</Nombre>
-                                         <Destino>1</Destino>
+                                         <Nombre>Gate of Rage</Nombre>
+                                         <Destino>2</Destino>
                                  </Puerta>
                                  <Puerta>
-                                         <Nombre>Plateada</Nombre>
-                                         <Destino>2</Destino>
+                                         <Nombre>Gate of Sorrow</Nombre>
+                                         <Destino>1</Destino>
                                  </Puerta>
                         </Puertas>
                 </Habitacion>
                 <Habitacion>
                         <ID>1</ID>
-                        <Nombre>Sala de Armas</Nombre>
-                        <Descripcion>Texto con la descripción de la sala de armas.</Descripcion>
+                        <Nombre>Plains of Sorrow</Nombre>
+                        <Descripcion>A big room, filled with a gray mist. You listen the laments of those whose souls are destined to eternal damnation, condemned to suffer and cry forever. A strange bloom, sourceless, lights the room.</Descripcion>
                         <Puertas>
                                  <Puerta>
-                                         <Nombre>Dorada</Nombre>
+                                         <Nombre>Cell</Nombre>
                                          <Destino>0</Destino>
                                  </Puerta>
                                  <Puerta>
-                                         <Nombre>Bronce</Nombre>
+                                         <Nombre>Gate of Rage</Nombre>
                                          <Destino>2</Destino>
                                  </Puerta>
                   </Puertas>
@@ -98,36 +169,43 @@ iluminación es el ténue brillo de unas pocas velas.</Descripcion>
            </Habitacion>
            <Habitacion>
                   <ID>2</ID>
-                  <Nombre>Habitación 2</Nombre>
-                  <Descripcion>Texto con la descripción de la habitación 2.</Descripcion>
+                  <Nombre>Maze of Rage</Nombre>
+                  <Descripcion>In this room the columns are screaming trees that cry blood. Streams of boiling lead flow by the side of the road. You better be off quick, before this laments drive you insane!</Descripcion>
                   <Puertas>
                           <Puerta>
-                                  <Nombre>Plateada</Nombre>
+                                  <Nombre>Gate to Cell</Nombre>
                                   <Destino>0</Destino>
                           </Puerta>
                           <Puerta>
-                                  <Nombre>Bronce</Nombre>
+                                  <Nombre>Gate to Sorrow</Nombre>
                                   <Destino>1</Destino>
                           </Puerta>
                           <Puerta>
-                                  <Nombre>Platino</Nombre>
+                                  <Nombre>Bloody Door</Nombre>
                                   <Destino>3</Destino>
                           </Puerta>
                   </Puertas>
+           </Habitacion>
+           <Habitacion>
+                        <ID>3</ID>
+                        <Nombre>Plains of Sorrow</Nombre>
+                        <Descripcion>A big room, filled with a gray mist. You listen the laments of those whose souls are destined to eternal damnation, condemned to suffer and cry forever. A strange bloom, sourceless, lights the room.</Descripcion>
+                        <Puertas>
+                                 <Puerta>
+                                         <Nombre>Cell</Nombre>
+                                         <Destino>0</Destino>
+                                 </Puerta>
+                                 <Puerta>
+                                         <Nombre>Gate of Rage</Nombre>
+                                         <Destino>2</Destino>
+                                 </Puerta>
+                  </Puertas>
                   <Enemigos>
-                          <Cantidad>2</Cantidad>
-                          <Enemigo>
-                                  <ID>1</ID>
-                          </Enemigo>
+                          <Cantidad>1</Cantidad>
                           <Enemigo>
                                   <ID>0</ID>
                           </Enemigo>
                   </Enemigos>
-           </Habitacion>
-           <Habitacion>
-                  <ID>3</ID>
-                  <Nombre>Salida</Nombre>
-                  <Descripcion>Descripción de la habitación de salida.</Descripcion>
            </Habitacion>
     </Laberinto>
 </Juego>

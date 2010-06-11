@@ -2,7 +2,6 @@
 #define ALIVE 1
 #define DEAD 0
 #define PAUSE while(getchar() != '\n')
-#define ABAB_CHEAT if (scanf("ABAB\n") == 0) {enemyHP = 0; PAUSE;}
 #define INVALID 0
 #define VALID 1
 #define WON 2
