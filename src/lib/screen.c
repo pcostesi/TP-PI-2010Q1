@@ -290,7 +290,7 @@ zeroOut(char ** m, size_t x, size_t y)
  * @return
  */
 screen
-	initscr(FILE * stream, size_t x, size_t y)
+initscr(FILE * stream, size_t x, size_t y)
 {
     screen scr = malloc(sizeof(screen_t));
     if (scr != NULL){
@@ -506,14 +506,14 @@ gauge(char * s, size_t capacity, size_t percentage)
     size_t idx2;
     int insertIdx;
     if (capacity < 5)
-		return NULL;
+        return NULL;
     idx2 = (capacity - 4) / 2;
     if (percentage > 100){
-		insertIdx = sprintf(&(s[idx2]), "%d", (int) (percentage / 100));
-		percentage %= 101;
-	} else {
-		insertIdx = sprintf(&(s[idx2]), "%d%%", (int) percentage);
-	}
+        insertIdx = sprintf(&(s[idx2]), "%d", (int) (percentage / 100));
+        percentage %= 101;
+    } else {
+        insertIdx = sprintf(&(s[idx2]), "%d%%", (int) percentage);
+    }
     for (itr = 0; itr < capacity; itr++){
         if (itr < insertIdx + idx2 && itr >= idx2) {
         } else if (itr < capacity * percentage / 100 && itr < capacity){
@@ -687,10 +687,10 @@ centerText(layer l, const char * t)
     zeroOut(l->matrix, l->x, l->y);
     for (tok = strtok(t2, "\n"); tok != NULL; tok = strtok(NULL, "\n")){
         margin = (l->x - strlen(tok)) / 2;
-		if (margin <= 0)
-			margin = 0;
-		setText(l, margin, insertFrom++, tok);
-			
+        if (margin <= 0)
+            margin = 0;
+        setText(l, margin, insertFrom++, tok);
+
     }
     free(t2);
 }

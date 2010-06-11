@@ -5,54 +5,38 @@
 int
 getName(char name[], int len)
 {
-    int i, validName = INVALID, a;
-    while( validName == INVALID)
+    int i, validName = VALID, a;
+    i = 0;
+    char buff;
+    while((buff = getchar()) != '\n' && buff != EOF && validName != NAME_TOO_LONG)
     {
-                validName = VALID;
-                i = 0;
-                char buff = getchar();
-                while( buff != '\n' && i < len )
-                {
-                        name[i] = buff;
-                        i++;
-                        buff = getchar();
-                }
-
-                name[i] = '\0';
-
-                if( i == 0)
-                {
-                        DELETE_BUFFER;
-                        validName = INVALID;
-                        return NAME_TOO_SHORT;
-                }
-                else if( i == len)
-                {
-
-                        DELETE_BUFFER;
-                        validName = INVALID;
-                        return NAME_TOO_LONG;
-                }
-                else if( name[0] == ' ' || name[i-1] == ' ')
-                {
-                        DELETE_BUFFER;
-                        validName = INVALID;
-                        return BAD_NAME_FORMAT;
-                }
-                else
-                {
-                        for(a = 0; a < i && validName ; a++)
-                        {
-                                if(!(isalpha(name[a]) || name[a] == ' ' || isdigit(name[a])) )
-                                        validName = INVALID;
-                        }
-                        if(!validName)
-                                return BAD_NAME_FORMAT;
-                        if (validName)
-                          return NAME_OK;
-                }
+        if( i >= len)
+        {
+            validName = NAME_TOO_LONG;
+        } else {
+            name[i] = buff;
+            i++;
         }
-    return NAME_TOO_SHORT;
+    }
+
+    name[i] = '\0';
+    if( i == 0 )
+    {
+            validName = NAME_TOO_SHORT;
+    }
+    else if( name[0] == ' ' || name[i-1] == ' ')
+    {
+            validName = BAD_NAME_FORMAT;
+    }
+    else
+    {
+            for(a = 0; a < i && validName ; a++)
+            {
+                    if(!(isalpha(name[a]) || name[a] == ' ' || isdigit(name[a])))
+                            validName = INVALID;
+            }
+    }
+    return validName;
 }
 
 

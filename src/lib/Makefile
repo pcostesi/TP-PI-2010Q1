@@ -17,8 +17,9 @@ $(TARGET):
 	$(CC) $(COPTS) -o $(TARGET) dungeonCrawlerBack.c dungeonCrawlerFront.c getnum.c libcrawl.c libparse.c state.c strings.c screen.c -g
 
 lint:
-	find ./ -follow | grep -E '([a-zA-Z0-9 _-.])+\.(c|h)' | xargs $(LINT) $(LINTOPTS)
+	find ./ -follow | grep -E '([a-zA-Z0-9 _-.])+\.(c|h)$$' | xargs $(LINT) $(LINTOPTS)
 
 clean:
 	echo Cleaning
 	- rm -r *.o
+	- rm game
