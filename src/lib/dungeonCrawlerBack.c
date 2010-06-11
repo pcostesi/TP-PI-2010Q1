@@ -16,7 +16,7 @@ drinkPotion(character_t *player)
   int restored;
   if(player->potions > 0)
   {
-    restored = (player->maxHP - player->HP) * 0.5 ;
+    restored = (player->maxHP - player->HP) * POTRESTORE;
     player->potions--;
     player->HP += restored;
     return restored;
@@ -29,7 +29,7 @@ drinkPotion(character_t *player)
 int
 getPotion(character_t *player)
 {
-  int chance = (25 + ( (float)(rand())/RAND_MAX ) * 10 );
+  int chance = (POTCHANCE + ( (float)(rand())/RAND_MAX ) * 10 );
   if(chance > ((float)(rand())/RAND_MAX )*100)
   {
     player->potions++;

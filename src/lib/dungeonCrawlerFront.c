@@ -13,9 +13,28 @@
 #define MAX_LAYERS 7
 #define CLEAN_BUFFER while (getchar() != '\n')
 #define MESSAGE_SIZE 141
+#define DELETE_BUFFER while(getchar() != '\n')
+#define ALIVE 1
+#define DEAD 0
+#define PAUSE while(getchar() != '\n')
+#define INVALID 0
+#define VALID 1
+#define WON 2
+#define MAX_INPUT 32
+#define NAME_TOO_SHORT 4
+#define NAME_TOO_LONG 2
+#define BAD_NAME_FORMAT 3
+
 
 #define LAYER(A, B) (A->layers[B])
+#define DIALOG_WIDTH 0.75
+#define DIALOG_HEIGHT 0.25
+#define CENTER_OFFSET(A, B) (int)(((A) - (B)) / 2.0)
+#define GAUGE_SIZE 35
 
+#define COMBAT_HIT_MESSAGE "%s has been hit for %d, leaving him with %d " \
+			   "health points remaining.\n \nPlease press " \
+			   "enter to continue."
 
 typedef struct CommandLineUserInterface
 {
@@ -80,7 +99,14 @@ main(int argcount, char ** vector_of_strings)
 	{
 		strcpy(fileName, vector_of_strings[1]);
 		currentGame = load_game(fileName);
-		if (currentGame == NULL) exit(14);
+		if (currentGame == NULL){
+			/* Check for the easter egg */
+			if (strcmp("cthulhu", fileName))
+				info(gui, NULL);
+			else
+				info(gui, "Invalid name");
+			exit(14);
+		}
 		if (argcount == 2)
 		{
 			seed = time(NULL);
@@ -91,7 +117,7 @@ main(int argcount, char ** vector_of_strings)
 		}
 	}
 	srand(seed);
-
+	
 	player = avatarNamescreen(gui);
 
 	log = Logbook(seed, player, fileName);
@@ -183,8 +209,15 @@ info(GUI g, const char *s)
 			" ----", \
 			NULL};
 	setMode(l, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE);
-	centerText(l, s);
-	draw(l, m);
+	if (s != NULL)
+	{
+		centerText(l, s);
+		draw(l, m);
+	} else {
+		/* This is a small tribute to Lovecraft */
+		centerText(l, "Ph'nglui mglw'nafh Cthulhu R'lyeh\n"
+			      "wgah'nagl fhtagn");
+	}
 	pack(g);
 	PAUSE;
 	setMode(l, SCR_HIDDEN);
@@ -197,7 +230,7 @@ optMenu(GUI g, const char *t, const char ** opts, logbook log)
 	int nopts = 0, num = 0, exit = 0;
 	char n[MAX_INPUT];
 	while (opts[nopts++] != NULL);
-	setMode(LAYER(g, MENU), SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE | SCR_NO_AUTO_RESIZE);
+	setMode(LAYER(g, MENU), SCR_NORMAL | SCR_NO_AUTO_RESIZE);
 	setMode(LAYER(g, DIALOG), SCR_HIDDEN);
 	vmenu(LAYER(g, MENU), t, opts);
 	pack(g);
@@ -239,7 +272,7 @@ healthBar(void)
 	layer 
 dialog(void)
 {
-	int x = ENV_WIDTH * 0.75, y = ENV_HEIGHT * 0.5;
+	int x = ENV_WIDTH * DIALOG_WIDTH, y = ENV_HEIGHT * DIALOG_HEIGHT;
 	layer l = newLayer(x, y, (ENV_WIDTH - x) / 2, (ENV_HEIGHT - y) / 2);
 	setTitle(l, "Dialog");
 	return l;
@@ -380,7 +413,7 @@ chooseProfessionScreen(GUI g, character_t *player, game_t *currentGame)
 	char t[141];
 	layer life = LAYER(g, HEALTHBAR);
 	layer dialogL = LAYER(g, DIALOG);
-	/* Hackish workaround to get a menu. We make an array of char pointers to already allocated pointers */
+	/* We make an array of char pointers to already allocated pointers */
 	const char ** opts = calloc(sizeof(char *), currentGame->professions_size + 1);
 	for (i = 0; i < currentGame->professions_size; i++){
 		if (currentGame->professions[i] != NULL)
@@ -399,7 +432,8 @@ chooseProfessionScreen(GUI g, character_t *player, game_t *currentGame)
 	gaugeWidgetUpdate(life, 100);
 	setMode(life, SCR_DRAW_MARGINS | SCR_DRAW_TITLE);
 	setGaugeBarName(life, player->name);
-	sprintf(t, "%s, you have chosen to be a %s. Your initial health points are %d",player->name, currentGame->professions[aux]->name, player->HP);
+	sprintf(t, "%s, you have chosen to be a %s. Your initial health points are %d", \
+		player->name, currentGame->professions[aux]->name, player->HP);
 	setMode(dialogL, SCR_NORMAL);
 	text(dialogL, t);
 	pack(g);
@@ -423,16 +457,16 @@ setupNormalLayout(GUI g)
 
 	resizeLayer(description, x / 2 - 2, y - 6);
 	absMoveLayer(description, 1, 5);
-	setMode(description, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE);
+	setMode(description, SCR_NORMAL);
 
 	resizeLayer(combatlog, x - 2, y / 2 - 2);
 	absMoveLayer(combatlog, 1, y / 2 - 1);
-	setMode(combatlog, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE | SCR_HIDDEN);
+	setMode(combatlog, SCR_NORMAL | SCR_HIDDEN);
 
 	resizeLayer(menuL, x / 2 - 3, y - 6);
 	absMoveLayer(menuL, x / 2 + 2, 5);
 	setTitle(menuL, "Your options...");
-	setMode(menuL, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE | SCR_NO_AUTO_RESIZE);
+	setMode(menuL, SCR_NORMAL | SCR_NO_AUTO_RESIZE);
 
 	setMode(LAYER(g, BACKGROUND), SCR_HIDDEN);
 
@@ -440,22 +474,24 @@ setupNormalLayout(GUI g)
 
 	void
 setCombatViewport(GUI g)
-{		
+{	
+	int t = SCR_NO_AUTO_RESIZE | SCR_NORMAL;
 	layer enemyL = LAYER(g, ENEMYBAR);
 	layer health = LAYER(g, HEALTHBAR);
 	layer combatlog = LAYER(g, COMBATLOG);
 	layer description = LAYER(g, DESCRIPTION);
 	layer dialog = LAYER(g, DIALOG);
-	setMode(combatlog, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_NO_AUTO_RESIZE | SCR_DRAW_TITLE);
-	setMode(health, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_NO_AUTO_RESIZE | SCR_DRAW_TITLE);
-	setMode(enemyL, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_NO_AUTO_RESIZE | SCR_DRAW_TITLE);
-	setMode(dialog, SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_NO_AUTO_RESIZE | SCR_DRAW_TITLE);
+	setMode(combatlog, t);
+	setMode(health, t);
+	setMode(enemyL, t);
+	setMode(dialog, t);
 	setMode(description, SCR_HIDDEN);
 }
 
 /*Simulates the combat between the player and any posible enemy*/
 	int
-combat(GUI g, character_t *player, enemy_t *enemy, profession_t *profession, game_t * currentGame, logbook log)
+combat( GUI g, character_t *player, enemy_t *enemy, \
+	profession_t *profession, game_t * currentGame, logbook log)
 {
 	int ret = -1, turn, hit, enemyHP, fullEnemyHP;
 	int dp[2];
@@ -474,7 +510,8 @@ combat(GUI g, character_t *player, enemy_t *enemy, profession_t *profession, gam
 	/* Randomly set the turn */
 	starter < 0.5 ? (turn = 0) : (turn = 1);
 
-	enemyHP = (enemy->minHP + ( (float)(rand())/RAND_MAX ) * (enemy->maxHP - enemy->minHP));
+	enemyHP = (enemy->minHP + ( (float)(rand())/RAND_MAX ) * \
+			(enemy->maxHP - enemy->minHP));
 	fullEnemyHP = enemyHP;
 
 	/* Clean up the combatlog */
@@ -492,18 +529,14 @@ combat(GUI g, character_t *player, enemy_t *enemy, profession_t *profession, gam
 			hit = damageRoll(profession->maxDP, profession->minDP);
 			enemyHP -= hit;
 			if (enemyHP < 0) enemyHP = 0;
-			sprintf(message, "%s has been hit for %d, leaving him with %d "
-					"health points remaining.\n \nPlease press "
-					"enter to continue.", enemy->name, hit, enemyHP);
+			sprintf(message, COMBAT_HIT_MESSAGE, enemy->name, hit, enemyHP);
 		}
 		else
 		{
 			hit = damageRoll(dp[0], dp[1]);
 			player->HP -= hit;
 			if (player->HP < 0) player->HP = 0;
-			sprintf(message, "%s has been hit for %d, leaving him with "
-					"%d health point remaining. \n \nPlease press"
-					" enter to continue.", player->name, hit, \
+			sprintf(message, COMBAT_HIT_MESSAGE, player->name, hit, \
 					player->HP);
 		}
 		logmsg(log, strlen(message) + 1, message);
@@ -525,7 +558,7 @@ combat(GUI g, character_t *player, enemy_t *enemy, profession_t *profession, gam
 	else
 	{
 		sprintf(message, "You have crushed another foolish enemy "
-				"that got in yur way");
+				"that got in your way");
 		ret = ALIVE;
 	}
 	logmsg(log, strlen(message) + 1, message);
@@ -651,6 +684,7 @@ dumpActions(GUI g, logbook log){
 	int
 menu(GUI g, game_t **currentGame, character_t *player, logbook log)
 {
+	game_t * newGame = NULL;
 	char name[MAX_INPUT];
 	layer dialogL = LAYER(g, DIALOG);
 	layer menuL = LAYER(g, MENU);
