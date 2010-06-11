@@ -25,12 +25,43 @@
 
 #define CLEAN_BUFFER while (getchar() != '\n')
 
-    void pack(GUI g)
+    void pack(GUI g);
+    void info(GUI g, const char *s);
+    void pack(GUI g);
+    void info(GUI g, const char *s);
+    int optMenu(GUI g, const char *t, const char ** opts, logbook log);	
+    layer healthBar(void);
+    layer dialog(void);
+    void setGaugeBarName(layer l, const char * name);
+    layer enemyBar(void);layer backgroundLayer(void);
+    layer menuLayer(void);
+    layer descriptionLayer(void);
+    layer combatLogLayer(void);
+    void splashscreen(GUI g);
+    character_t * avatarNamescreen(GUI g);
+    game_t * askForGame(GUI g, char * fileName, logbook log);
+    void chooseProfessionScreen(GUI g, character_t *player, game_t *currentGame);
+    void setupNormalLayout(GUI g);
+    int combat(GUI g, character_t *player, enemy_t *enemy, profession_t *profession, game_t * currentGame, logbook log);
+    int enterRoom(GUI g, character_t *player, room_t *actualRoom, game_t *currentGame, logbook log);
+    GUI initgui(void);
+    void endgui(GUI g);
+    int menu(GUI g, game_t **currentGame, character_t *player, logbook log);
+    int getDoor(GUI g, room_t * room);
+    void endScreen(GUI gui, int status);
+    int main(int argcount, char ** vector_of_strings);
+
+
+
+
+    void 
+    pack(GUI g)
     {
         update(g->scr, g->layers);
     }
 
-    void info(GUI g, const char *s)
+    void 
+    info(GUI g, const char *s)
     {
         layer l = LAYER(g, DIALOG);
         static const char *m[] = { \
@@ -85,14 +116,16 @@
         return n - 1;
     }
 
-    layer healthBar(void)
+    layer 
+    healthBar(void)
     {
         layer l = gaugeWidget("Your Health", 35);
         absMoveLayer(l, 1, 2);
         return l;
     }
 
-    layer dialog(void)
+    layer 
+    dialog(void)
     {
         int x = ENV_WIDTH * 0.75, y = ENV_HEIGHT * 0.5;
         layer l = newLayer(x, y, (ENV_WIDTH - x) / 2, (ENV_HEIGHT - y) / 2);
@@ -100,19 +133,22 @@
         return l;
     }
 
-    void setGaugeBarName(layer l, const char * name)
+    void 
+    setGaugeBarName(layer l, const char * name)
     {
         setTitle(l, name);
     }
 
-    layer enemyBar(void)
+    layer 
+    enemyBar(void)
     {
         layer l = gaugeWidget("Enemy Health", 35);
         absMoveLayer(l, (ENV_WIDTH / 2) * 0.75, (ENV_HEIGHT / 2) * 0.50);
         return l;
     }
 
-    layer backgroundLayer(void)
+    layer 
+    backgroundLayer(void)
     {
 
         layer l;
@@ -123,7 +159,8 @@
         return l;
     }
 
-    layer menuLayer(void)
+    layer 
+    menuLayer(void)
     {
         int x = ENV_WIDTH * 0.75, y = ENV_HEIGHT * 0.5;
         layer l = newLayer(x, y, (ENV_WIDTH - x) / 2, (ENV_HEIGHT - y) / 2);
@@ -131,21 +168,24 @@
         return l;
     }
 
-    layer descriptionLayer(void)
+    layer 
+    descriptionLayer(void)
     {
         layer l = newLayer(20, 5, 0, 0);
         setTitle(l, "Room");
         return l;
     }
 
-    layer combatLogLayer(void)
+    layer 
+    combatLogLayer(void)
     {
         layer l = newLayer(20, 5, 0, 0);
         setTitle(l, "Combat Log");
         return l;
     }
 
-    void splashscreen(GUI g)
+    void 
+    splashscreen(GUI g)
     {
         int idx = 1;
         while (g->layers[idx] != NULL){
@@ -155,7 +195,8 @@
         PAUSE;
     }
 
-    character_t * avatarNamescreen(GUI g)
+    character_t * 
+    avatarNamescreen(GUI g)
     {
         character_t * player;
         char name[MAX_INPUT];
@@ -190,7 +231,8 @@
     }
 
 
-    game_t * askForGame(GUI g, char * fileName, logbook log)
+    game_t * 
+    askForGame(GUI g, char * fileName, logbook log)
     {
         game_t * currentGame = NULL;
         layer dialog = LAYER(g, DIALOG);
@@ -319,11 +361,30 @@
                  enemy->name, enemyHP);
         info(g, message);
 
-        sprintf(message, "You engage a %s in battle", enemy->name);
-        logmsg(log, strlen(message) + 1, message);
-        text(LAYER(g, COMBATLOG), message);
-        pack(g);
-        PAUSE;
+	    while (player->HP > 0 && enemyHP > 0)
+	    {
+		    if(turn % 2 == 0)
+		    {
+			hit = damageRoll(profession->maxDP, profession->minDP);
+			enemyHP -= hit;
+			if (enemyHP < 0) enemyHP = 0;
+			sprintf(message, "%s has been hit for %d, leaving him with %d health points remaining.\n \nPlease press enter to continue.", enemy->name, hit, enemyHP);
+		    }
+		    else
+		    {
+			hit = damageRoll(dp[0], dp[1]);
+			player->HP -= hit;
+			if (player->HP < 0) player->HP = 0;
+			sprintf(message, "%s has been hit for %d, leaving him with %d health point remaining. \n \nPlease press enter to continue.", player->name, hit, player->HP);
+		    }
+		    logmsg(log, strlen(message) + 1, message);
+		    centerText(LAYER(g, COMBATLOG), message);
+		    gaugeWidgetUpdate(enemyL, enemyHP * 100 / fullEnemyHP);
+		    gaugeWidgetUpdate(LAYER(g, HEALTHBAR), player->HP * 100 / player->maxHP);
+		    pack(g);
+		    PAUSE;
+		    turn = (turn + 1) % 2;
+	    }
 
         while (player->HP > 0 && enemyHP > 0)
         {
@@ -411,7 +472,8 @@
         return status;
     }
 
-    GUI initgui(void)
+    GUI 
+    initgui(void)
     {
         GUI g = malloc(sizeof(GUI_t));
         if (g != NULL){
@@ -549,7 +611,8 @@ getDoor(GUI g, room_t * room)
     return itr;
 }
 
-void endScreen(GUI gui, int status)
+void 
+endScreen(GUI gui, int status)
 {
     int idx = 0, mode = 0;
     while (gui->layers[idx] != NULL){
