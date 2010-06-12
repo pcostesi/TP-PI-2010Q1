@@ -154,12 +154,12 @@ new_enemy_from_gpnode(game_t * game, gpnode_p p)
 		} else if (gpn_cmp_tag(node, "MaxHP")){
 			enemy->maxHP = atoi(gpn_get_content(node));
 		} else if (gpn_ncmp_tag(node, "MinDP-", 6)){
-			n = atoi(gpn_get_tag(node) + 5);
+			n = atoi(gpn_get_tag(node) + 6);
 			m = getProfessionIndexByID(game, n);
 			if (m >= 0)
 				minDP[m] = atoi(gpn_get_content(node));
 		} else if (gpn_ncmp_tag(node, "MaxDP-", 6)){
-			n = atoi(gpn_get_tag(node) + 5);
+			n = atoi(gpn_get_tag(node) + 6);
 			m = getProfessionIndexByID(game, n);
 			if (m >= 0)
 				maxDP[m] = atoi(gpn_get_content(node));
