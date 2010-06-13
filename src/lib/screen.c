@@ -50,7 +50,6 @@
  */
 
 #include "screen.h"
-#include "strings.h"
 
 /*
  *  Macros and constants
@@ -64,7 +63,7 @@ typedef struct Layer{
     size_t x, y;
     int x_offset, y_offset;
     int mode;
-    const char * name;
+    char * name;
 } layer_t;
 
 
@@ -72,6 +71,7 @@ typedef struct Screen{
     char ** buffer;
     size_t x, y;
     FILE * stream;
+    int mode;
 } screen_t;
 
 
@@ -85,12 +85,23 @@ static void bufferToStream(screen scr);
 static void drawMargins(screen scr, layer l);
 static void zeroOut(char ** m, size_t x, size_t y);
 static void freeMatrix(char ** m, size_t y);
-
+static int nlen(int n);
 
 /*
  *  Static functions
  */
 
+static int
+nlen(int in)
+{
+    int size = 0;
+    if (in == 0)
+        size = 1;
+    for (; in != 0; size++, in /= 10)
+        if (in < 0)
+            in = in * -10;
+    return size;
+}
 
 /**
  * @brief
@@ -131,6 +142,7 @@ drawTitle(screen scr, layer l)
  *
  * @return
  */
+
 static void
 drawMargins(screen scr, layer l)
 {
@@ -174,22 +186,23 @@ static void
 drawLayer(screen scr, layer l)
 {
     int itr_x, itr_y;
-
+    char c;
     int y_boundary = MIN(l->y + l->y_offset, scr->y);
     int x_boundary = MIN(l->x + l->x_offset, scr->x);
 
-    if (!(l->mode & SCR_HIDDEN)){
+    if (!(l->mode & LYR_HIDDEN)){
         for (itr_y = l->y_offset; itr_y < y_boundary; itr_y++){
             for (itr_x = l->x_offset; itr_x < x_boundary; itr_x++){
-                if (itr_y >= 0 && itr_x >= 0 && itr_y - l->y_offset >= 0 && itr_x - l->x_offset >= 0)
-                    scr->buffer[itr_y][itr_x] = \
-                        l->matrix[itr_y - l->y_offset][itr_x - l->x_offset];
+                if (itr_y >= 0 && itr_x >= 0 && itr_y - l->y_offset >= 0 && \
+                itr_x - l->x_offset >= 0 && (c = \
+                l->matrix[itr_y - l->y_offset][itr_x - l->x_offset]) != 0)
+                    scr->buffer[itr_y][itr_x] = c;
             }
         }
 
-        if (l->mode & SCR_DRAW_MARGINS)
+        if (l->mode & LYR_DRAW_MARGINS)
             drawMargins(scr, l);
-        if (l->mode & SCR_DRAW_TITLE)
+        if (l->mode & LYR_DRAW_TITLE)
             drawTitle(scr, l);
     }
 }
@@ -216,6 +229,8 @@ bufferToStream(screen scr)
         }
         if (itr_y != scr->y - 1) fputc('\n', scr->stream);
     }
+    if (scr->mode & SCR_NEWLINE)
+        fputc('\n', scr->stream);
     fflush(scr->stream);
 }
 
@@ -290,7 +305,7 @@ zeroOut(char ** m, size_t x, size_t y)
  * @return
  */
 screen
-initscr(FILE * stream, size_t x, size_t y)
+minitscr(FILE * stream, size_t x, size_t y, int mode)
 {
     screen scr = malloc(sizeof(screen_t));
     if (scr != NULL){
@@ -298,6 +313,7 @@ initscr(FILE * stream, size_t x, size_t y)
         scr->buffer = matrixAlloc(x, y);
         scr->x = x;
         scr->y = y;
+        scr->mode = mode;
     }
     return scr;
 }
@@ -319,7 +335,7 @@ newLayer(size_t x, size_t y, int x_offset, int y_offset)
         result->x = x;
         result->x_offset = x_offset;
         result->y_offset = y_offset;
-        result->mode = SCR_NORMAL;
+        result->mode = LYR_NORMAL;
         result->name = NULL;
     }
     return result;
@@ -371,9 +387,11 @@ layer
 setText(layer l,int x, int y, const char * t)
 {
     int itr_x;
-    if (l->y <= y || l->x <= x) return NULL;
-    for (itr_x = x; itr_x < l->x && t[itr_x - x] != 0; itr_x++){
-        l->matrix[y][itr_x] = t[itr_x - x];
+    if (l->y <= y || l->x <= x || x < 0 || y < 0) return NULL;
+    if (l != NULL){
+        for (itr_x = x; itr_x < l->x && t[itr_x - x] != 0; itr_x++){
+            l->matrix[y][itr_x] = t[itr_x - x];
+        }
     }
     return l;
 }
@@ -381,10 +399,11 @@ setText(layer l,int x, int y, const char * t)
 layer
 setNumber(layer l,int x, int y, unsigned int i)
 {
-    int itr_x;
+    int itr_x, len;
     if (l->y <= y || l->x <= x) return NULL;
+    len = MIN(l->x - 1, nlen(i) - 1);
     for (itr_x = x; itr_x < l->x && i > 0; itr_x++, i /= 10){
-        l->matrix[y][itr_x] = i % 10 + '0';
+        l->matrix[y][itr_x - len] = i % 10 + '0';
     }
     return l;
 }
@@ -399,11 +418,7 @@ setNumber(layer l,int x, int y, unsigned int i)
 void
 clrscr(screen scr)
 {
-    int itr_y, itr_x;
-    /* clear the screen */
-    for (itr_y = 0; itr_y < scr->y; itr_y++)
-        for (itr_x = 0; itr_x < scr->x; itr_x++)
-            scr->buffer[itr_y][itr_x] = ' ';
+    zeroOut(scr->buffer, scr->x, scr->y);
 }
 
 /**
@@ -453,14 +468,21 @@ endscr(screen scr)
  *
  * @return
  */
-void
-setTitle(layer l, const char * c)
+layer
+setTitle(layer l, const char * t)
 {
-    /*
-    l->name = malloc(strlen(c) + 1);
-    strcpy(l->name, c);
-    */
-    l->name = c;
+    char * c;
+    int size = strlen(t) + 1;
+    if (l->name != NULL)
+        c = realloc(l->name, size);
+    else
+        c = malloc(size);
+    if (c != NULL){
+        l->name = c;
+        strcpy(l->name, t);
+    } else
+        l = NULL;
+    return l;
 }
 
 /**
@@ -488,6 +510,8 @@ freeLayer(layer l)
 {
     if (l != NULL){
         freeMatrix(l->matrix, l->y);
+        if (l->name != NULL)
+            free(l->name);
         free(l);
     }
 }
@@ -556,11 +580,6 @@ gaugeWidgetUpdate(layer l, size_t percentage)
     gauge(&(l->matrix[0][1]), l->x - 2, percentage);
 }
 
-layer
-text (layer l, const char *s)
-{
-    return idxtext(l, 1, s);
-}
 
 int
 is_valid_char(char c)
@@ -576,8 +595,6 @@ is_valid_char(char c)
 layer
 idxtext(layer l, int start, const char *s)
 {
-    #define LEFT_MARGIN 1
-    #define RIGHT_MARGIN 1
     int itr, aux;
     int x = LEFT_MARGIN, y = start;
     zeroOut(l->matrix, l->x, l->y);
@@ -585,7 +602,7 @@ idxtext(layer l, int start, const char *s)
         if (is_valid_char(s[itr])){
             if (x < l->x - RIGHT_MARGIN){
                 l->matrix[y][x++] = s[itr];
-            } else if (l->mode & SCR_AUTO_WRAP) {
+            } else if (l->mode & LYR_AUTO_WRAP) {
                 x = LEFT_MARGIN;
                 y++;
                 itr--;
@@ -603,8 +620,6 @@ idxtext(layer l, int start, const char *s)
         }
     }
     return l;
-    #undef LEFT_MARGIN
-    #undef RIGHT_MARGIN
 }
 
 /**
@@ -648,7 +663,7 @@ vmenu(layer l, const char * txt, const char ** opts)
     zeroOut(l->matrix, l->x, l->y);
     /* Get the number of options to show. */
     for (itr = 0; opts[itr] != NULL; itr++);
-    if (SCR_NO_AUTO_RESIZE != (l->mode & SCR_NO_AUTO_RESIZE))
+    if (LYR_NO_AUTO_RESIZE != (l->mode & LYR_NO_AUTO_RESIZE))
         l = resizeLayer(l, l->x, itr + normalTextSize + 1);
     idxtext(l, 1, txt);
     for (itr = 0; opts[itr] != NULL && itr + normalTextSize < l->y - 1; itr++){
@@ -677,20 +692,30 @@ getScreenDimensions(screen scr, int *x, int *y)
 void
 centerText(layer l, const char * t)
 {
-    char * t2 = dupstr(t);
+    int insertFrom = 0;
+    int margin = 0, lines = 1, itr = 0;
+    char * t2;
     char * tok;
-    int insertFrom = 0, margin = 0, lines = 1, itr = 0;
+
+    t2 = malloc(strlen(t) + 1);
+    if (t2 != NULL)
+        strcpy(t2, t);
+
     while (t2[itr] != 0)
         if (t2[itr++] == '\n')
             lines++;
-    insertFrom = (l->y - lines) / 2;
-    zeroOut(l->matrix, l->x, l->y);
-    for (tok = strtok(t2, "\n"); tok != NULL; tok = strtok(NULL, "\n")){
-        margin = (l->x - strlen(tok)) / 2;
-        if (margin <= 0)
-            margin = 0;
-        setText(l, margin, insertFrom++, tok);
 
+    if (lines <= l->y)
+        insertFrom = (l->y - lines) / 2;
+    zeroOut(l->matrix, l->x, l->y);
+
+    for (tok = strtok(t2, "\n"); tok != NULL; tok = strtok(NULL, "\n")){
+        margin = l->x - strlen(tok);
+        if (margin < 0)
+            margin = 0;
+        else
+            margin /= 2;
+        setText(l, margin, insertFrom++, tok);
     }
     free(t2);
 }

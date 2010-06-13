@@ -285,7 +285,8 @@ game_t *
 load_state(const char * filename, logbook book)
 {
     game_t * g = NULL;
-    gpnode_p node, root, character, seed, filenode = NULL, rooms;
+    gpnode_p node, root, character = NULL, seed = NULL, filenode = NULL;
+    gpnode_p rooms = NULL;
     FILE *fp;
 
     fp = fopen(filename, "r");

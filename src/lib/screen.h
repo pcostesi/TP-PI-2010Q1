@@ -54,26 +54,32 @@
 typedef struct Screen * screen;
 typedef struct Layer * layer;
 
-#define SCR_DRAW_MARGINS 2
-#define SCR_DRAW_TITLE 8
-#define SCR_AUTO_WRAP 1
-#define SCR_HIDDEN 4
-#define SCR_NO_AUTO_RESIZE 16
-#define SCR_NORMAL (SCR_AUTO_WRAP | SCR_DRAW_MARGINS | SCR_DRAW_TITLE)
-#define STD_HEIGHT 25
+#define LEFT_MARGIN 1
+#define RIGHT_MARGIN 1
+#define LYR_DRAW_MARGINS 2
+#define LYR_DRAW_TITLE 8
+#define LYR_AUTO_WRAP 1
+#define LYR_HIDDEN 4
+#define LYR_NO_AUTO_RESIZE 16
+#define LYR_NORMAL (LYR_AUTO_WRAP | LYR_DRAW_MARGINS | LYR_DRAW_TITLE)
+#define SCR_NEWLINE 1
+#define SCR_DEFAULT 0
+#define STD_HEIGHT 24
 #define STD_WIDTH 80
-#define ENV_HEIGHT (getenv("LINES") == NULL ? STD_HEIGHT : atoi(getenv("LINES")))
+#define ENV_HEIGHT (getenv("LINES") == NULL ? STD_HEIGHT : atoi(getenv("LINES")) - 1)
 #define ENV_WIDTH (getenv("COLUMNS") == NULL ? STD_WIDTH : atoi(getenv("COLUMNS")))
+
+#define initscr(A, B, C) minitscr(A, B, C, SCR_DEFAULT)
+#define text(l, s) idxtext(l, 1, s)
 
 /*
  *  Public function prototypes
  */
 
-
-screen initscr(FILE *, size_t, size_t);
+screen minitscr(FILE *, size_t, size_t, int);
 layer newLayer(size_t, size_t, int, int);
 
-void setTitle(layer, const char * c);
+layer setTitle(layer, const char * c);
 void setMode(layer, int);
 layer draw(layer, const char **);
 void update(screen, layer *);
@@ -93,7 +99,6 @@ void gaugeWidgetUpdate(layer, size_t);
 layer vmenu(layer, const char *, const char **);
 
 layer idxtext(layer, int, const char *);
-layer text(layer, const char *);
 
 int getScreenDimensions(screen, int *, int *);
 void centerText(layer, const char *);

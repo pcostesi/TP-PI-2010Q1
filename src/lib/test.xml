@@ -39,7 +39,7 @@
            </Profesion>
            <Profesion>
                    <ID>4</ID>
-                   <Nombre>Lawyer</Nombre>
+                   <Nombre>Demon</Nombre>
                    <MinHP>180</MinHP>
                    <MaxHP>380</MaxHP>
                    <MinDP>1</MinDP>
@@ -350,7 +350,7 @@
                                  </Puerta>
                                  <Puerta>
                                          <Nombre>Black Hole</Nombre>
-                                         <Destino>9</Destino>
+                                         <Destino>10</Destino>
                                  </Puerta>
 		  </Puertas>
                   <Enemigos>
